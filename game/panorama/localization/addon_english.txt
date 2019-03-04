@@ -1,0 +1,10 @@
+"addon"
+{
+	"Unassigned"      								"Unassigned Team"
+	"Spectator"       								"Spectator Team"
+	"Neutrals"        								"Neutral Team"
+	"NoTeam"          								"No Team"
+
+	"DOTA_GoodGuys"   								"Last 5 Artifact Players"
+	"DOTA_BadGuys"    								"Valve Devs In For The Long Haul"
+}

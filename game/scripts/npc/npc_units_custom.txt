@@ -1,0 +1,50 @@
+"DOTAUnits"
+{
+	"Version"	"1"
+
+	"npc_artifart_prey_on_the_weak_summon"
+	{
+		"Model"						"models/items/beastmaster/boar/beast_heart_marauder_beast_heart_marauder_warhound/beast_heart_marauder_beast_heart_marauder_warhound.vmdl"
+		"BaseClass"					"npc_dota_beastmaster_boar"
+		"SoundSet"					"Beastmaster_Boar"
+		"Level"						"1"
+		"ModelScale"				"0.65"
+		"IsSummoned"				"1"
+		"UnitLabel"					"boar"
+
+		"Ability1"					"prey_on_the_weak_hound_poison"
+
+		"ArmorPhysical"				"1"
+
+		"AttackCapabilities"		"DOTA_UNIT_CAP_RANGED_ATTACK"
+		"AttackDamageMin"			"21"
+		"AttackDamageMax"			"23"
+		"AttackRate"				"1.0"
+		"AttackAnimationPoint"		"0.5"
+		"AttackAcquisitionRange"	"600"
+		"AttackRange"				"350"
+		"ProjectileModel"			"particles/units/heroes/hero_beastmaster/beastmaster_boar_attack.vpcf"
+		"ProjectileSpeed"			"1500"
+
+		"HealthBarOffset"			"125"
+
+		"BountyXP"					"60"
+		"BountyGoldMin"				"26"
+		"BountyGoldMax"				"32"
+
+		"MovementCapabilities"		"DOTA_UNIT_CAP_MOVE_GROUND"
+		"MovementSpeed"				"325"
+		"MovementTurnRate"			"0.6"
+
+		"StatusHealth"				"450"
+		"StatusHealthRegen"			"0.0"
+
+		"VisionDaytimeRange"		"1400"
+		"VisionNighttimeRange"		"800"
+
+		"TeamName"					"DOTA_TEAM_NEUTRALS"
+		"CombatClassAttack"			"DOTA_COMBAT_CLASS_ATTACK_HERO"
+		"CombatClassDefend"			"DOTA_COMBAT_CLASS_DEFEND_BASIC"
+		"UnitRelationshipClass"		"DOTA_NPC_UNIT_RELATIONSHIP_TYPE_DEFAULT"
+	}
+}

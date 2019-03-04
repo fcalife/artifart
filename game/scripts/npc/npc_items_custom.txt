@@ -1,0 +1,41 @@
+"DOTAAbilities"
+{
+	"item_apotheosis_blade"
+	{
+		"ID"							"7000"
+		"BaseClass"						"item_lua"
+		"ScriptFile"					"cards.lua"
+		"AbilityTextureName" 			"custom/item_apotheosis_blade"
+
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_ITEM"
+		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
+		"SpellDispellableType"			"SPELL_DISPELLABLE_YES"
+
+		"ItemCost"						"0"
+		"ItemDeclarations"				"DECLARE_PURCHASES_TO_TEAMMATES | DECLARE_PURCHASES_IN_SPEECH | DECLARE_PURCHASES_TO_SPECTATORS"
+		"ShouldBeSuggested"				"0"
+		"ItemPurchasable"				"0"
+		"ItemSellable"					"0"
+		"ItemKillable"					"0"
+		"ItemDroppable"					"0"
+
+		"AbilitySpecial"
+		{
+			"01"
+			{
+				"var_type"					"FIELD_INTEGER"
+				"bonus_damage"				"100"
+			}
+			"02"
+			{
+				"var_type"					"FIELD_INTEGER"
+				"mute_duration"				"3"
+			}
+			"03"
+			{
+				"var_type"					"FIELD_INTEGER"
+				"mute_dps"					"3"
+			}
+		}
+	}
+}

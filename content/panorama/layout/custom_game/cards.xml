@@ -1,0 +1,29 @@
+<root>
+	<styles>
+		<include src="file://{resources}/styles/custom_game/cards.css" />
+	</styles>
+
+	<scripts>
+		<include src="file://{resources}/scripts/custom_game/cards.js" /> 
+	</scripts>
+
+	<Panel>
+		<Panel id="CardsContainer">
+			<Panel class="CardPanel" id="CardPanel1" onmouseout="DOTAHideAbilityTooltip()">
+				<Image class="CardButton" id="CardButton1" scaling="stretch-to-fit-y-preserve-aspect" onactivate="UseCard('1')" />
+			</Panel>
+			<Panel class="CardPanel" id="CardPanel2" onmouseout="DOTAHideAbilityTooltip()">
+				<Image class="CardButton" id="CardButton2" scaling="stretch-to-fit-y-preserve-aspect" onactivate="UseCard('2')" />
+			</Panel>
+			<Panel class="CardPanel" id="CardPanel3" onmouseout="DOTAHideAbilityTooltip()">
+				<Image class="CardButton" id="CardButton3" scaling="stretch-to-fit-y-preserve-aspect" onactivate="UseCard('3')" />
+			</Panel>
+			<Panel class="CardPanel" id="CardPanel4" onmouseout="DOTAHideAbilityTooltip()">
+				<Image class="CardButton" id="CardButton4" scaling="stretch-to-fit-y-preserve-aspect" onactivate="UseCard('4')" />
+			</Panel>
+			<Panel class="CardPanel" id="CardPanel5" onmouseout="DOTAHideAbilityTooltip()">
+				<Image class="CardButton" id="CardButton5" scaling="stretch-to-fit-y-preserve-aspect" onactivate="UseCard('5')" />
+			</Panel>
+		</Panel>
+	</Panel>
+</root>

@@ -1,0 +1,27 @@
+<root>
+	<styles>
+		<include src="file://{resources}/styles/custom_game/game_options.css" />
+	</styles>
+
+	<scripts>
+		<include src="file://{resources}/scripts/custom_game/game_options.js" /> 
+	</scripts>
+
+	<Panel>
+		<Panel id="GameOptionsContainer">
+			<Label class="GameOptionsLabel" text="Exp/gold rate?"/>
+			<Button class="GameOptionsButton" id="100Button" onactivate="ChangeGameSpeed('100')">
+				<Label class="ButtonLabel" text="100%"/>
+			</Button>
+			<Button class="GameOptionsButton" id="125Button" onactivate="ChangeGameSpeed('125')">
+				<Label class="ButtonLabel" text="125%"/>
+			</Button>
+			<Button class="GameOptionsButton" id="150Button" onactivate="ChangeGameSpeed('150')">
+				<Label class="ButtonLabel" text="150%"/>
+			</Button>
+			<Button class="GameOptionsButton" id="200Button" onactivate="ChangeGameSpeed('200')">
+				<Label class="ButtonLabel" text="200%"/>
+			</Button>
+		</Panel>
+	</Panel>
+</root>
