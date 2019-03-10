@@ -6,7 +6,7 @@
 		"CDmeInputTexture"
 		{
 			"m_name" "string" "0"
-			"m_fileName" "string" "materials/particles/card_avernus_blessing.png"
+			"m_fileName" "string" "materials/particles/avernus_blessing.png"
 			"m_colorSpace" "string" "srgb"
 			"m_typeString" "string" "2D"
 		}

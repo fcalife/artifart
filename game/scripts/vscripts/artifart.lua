@@ -8,22 +8,34 @@ end
 function Artifart:Initialize()
 	Artifart.card_list = LoadKeyValues("scripts/npc/KV/cardlist.kv")
 	Artifart.secret_shop_items = LoadKeyValues("scripts/npc/KV/secret_shop_items.kv")
-	local initial_hand = {}
-	for i = 1, MAX_CARDS do
-		initial_hand[i] = "blank"
-	end
-	for player_id = 0, (PlayerResource:GetPlayerCount() - 1) do
+	Artifart.valid_players = {}
+	for player_id = 0, DOTA_MAX_TEAM_PLAYERS  do
 		if PlayerResource:IsValidPlayer(player_id) then
-			CustomNetTables:SetTableValue("player_cards", "player_"..player_id.."_cards", initial_hand)
-			print("Set up deck for player "..player_id)
+			self:InitializeSinglePlayer(player_id)
 		end
 	end
 end
 
+-- Initialize card list for a single player
+function Artifart:InitializeSinglePlayer(player_id)
+	if Artifart.valid_players[player_id] then
+		print("Player"..player_id.." already set up!")
+		return false
+	end
+	local initial_hand = {}
+	for i = 1, MAX_CARDS do
+		initial_hand[i] = "blank"
+	end
+	Artifart.valid_players[player_id] = true
+	CustomNetTables:SetTableValue("player_cards", "player_"..player_id.."_cards", initial_hand)
+	print("Set up deck for player "..player_id)
+	return true
+end
+
 -- Periodic card giving
 function Artifart:AddPeriodicCards()
-	for player_id = 0, (PlayerResource:GetPlayerCount() - 1) do
-		if PlayerResource:IsValidPlayer(player_id) then
+	for player_id = 0, DOTA_MAX_TEAM_PLAYERS  do
+		if PlayerResource:IsValidPlayer(player_id) and Artifart.valid_players[player_id] then
 			self:AddRandomCard(player_id)
 		end
 	end

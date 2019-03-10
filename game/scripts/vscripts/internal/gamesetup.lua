@@ -12,7 +12,7 @@ function GameMode:_InitGameMode()
 	-- Should the main shop contain Secret Shop items as well as regular items?
 	GameRules:SetUseUniversalShopMode(true)
 	-- Should we let people select the same hero as each other?
-	GameRules:SetSameHeroSelectionEnabled(true)
+	GameRules:SetSameHeroSelectionEnabled(false)
 	-- How long should we let people select their hero?
 	GameRules:SetHeroSelectionTime(60)
 	-- How long should strategy time last?

@@ -29,7 +29,7 @@
 			m_nSequenceCombineMode = "SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0"
 			m_bMod2X = true
 			m_flOverbrightFactor = 4.0
-			m_hTexture = resource:"materials/particle/spark_glow_02.vtex"
+			m_hTexture = resource:"materials/particle/od_glow.vtex"
 		},
 	]
 	m_Operators = 
@@ -73,8 +73,8 @@
 		},
 		{
 			_class = "C_INIT_RandomRadius"
-			m_flRadiusMin = 85.0
-			m_flRadiusMax = 120.0
+			m_flRadiusMin = 90.0
+			m_flRadiusMax = 140.0
 		},
 		{
 			_class = "C_INIT_RandomRotation"

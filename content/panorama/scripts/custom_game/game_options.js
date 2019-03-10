@@ -10,12 +10,38 @@ function InitializeUI() {
 		return;
 	} else if (is_host) {
 		FindDotaHudElement('GameOptionsContainer').style.visibility = 'visible';
+		var player_count = 0
+		var radiant_count = 0
+		var dire_count = 0
+		for (var i = 0; i < 10; i++) {
+			if (Players.IsValidPlayerID(i)) {
+				player_count = player_count +1;
+				if (Players.GetTeam(i) == DOTATeam_t.DOTA_TEAM_GOODGUYS) {
+					radiant_count = radiant_count + 1
+				} else if (Players.GetTeam(i) == DOTATeam_t.DOTA_TEAM_BADGUYS) {
+					dire_count = dire_count + 1
+				}
+			}
+		}
+		if (player_count < 10) {
+			FindDotaHudElement('BotOptionsContainer').style.visibility = 'visible';
+			if (radiant_count > 0 && dire_count > 0) {
+				$("#FillEnemyButton").style.visibility = 'collapse';
+				$("#BotOptionsContainer").style.height = '200px';
+			}
+		}
+
 	}
 }
 
 function ChangeGameSpeed(speed) {
 	GameEvents.SendCustomGameEventToServer('increase_game_speed', {speed: speed});
 	FindDotaHudElement('GameOptionsContainer').style.visibility = 'collapse';
+}
+
+function SetBotOptions(option) {
+	GameEvents.SendCustomGameEventToServer('set_bot_options', {option: option});
+	FindDotaHudElement('BotOptionsContainer').style.visibility = 'collapse';
 }
 
 // Utility functions

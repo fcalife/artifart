@@ -31,6 +31,19 @@
 		GameUI.CustomUIConfig().team_colors[DOTATeam_t.DOTA_TEAM_GOODGUYS] = "#30a030;";
 		GameUI.CustomUIConfig().team_colors[DOTATeam_t.DOTA_TEAM_BADGUYS ] = "#b03030;";
 
+		// Hide vanilla pick screen in loading screen
+		HidePickScreen()
+
+		function HidePickScreen() {
+			if (!Game.GameStateIs(3)) {
+				FindDotaHudElement("PreGame").style.opacity = "0";
+				$.Schedule(1.0, HidePickScreen)
+			}
+			else {
+				FindDotaHudElement("PreGame").style.opacity = "1";
+			}
+		}
+
 	</script>
 
 	<Panel>

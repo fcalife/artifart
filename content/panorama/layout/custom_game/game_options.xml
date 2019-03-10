@@ -9,7 +9,7 @@
 
 	<Panel>
 		<Panel id="GameOptionsContainer">
-			<Label class="GameOptionsLabel" text="Exp/gold rate?"/>
+			<Label class="GameOptionsLabel" text="#exp_gold_rate"/>
 			<Button class="GameOptionsButton" id="100Button" onactivate="ChangeGameSpeed('100')">
 				<Label class="ButtonLabel" text="100%"/>
 			</Button>
@@ -21,6 +21,21 @@
 			</Button>
 			<Button class="GameOptionsButton" id="200Button" onactivate="ChangeGameSpeed('200')">
 				<Label class="ButtonLabel" text="200%"/>
+			</Button>
+		</Panel>
+		<Panel id="BotOptionsContainer">
+			<Label class="BotOptionsLabel" text="#bot_options_title"/>
+			<Button class="BotOptionsButton" id="FillAllButton" onactivate="SetBotOptions('1')">
+				<Label class="ButtonLabel" text="#bot_options_1"/>
+			</Button>
+			<Button class="BotOptionsButton" id="EqualizeButton" onactivate="SetBotOptions('2')">
+				<Label class="ButtonLabel" text="#bot_options_2"/>
+			</Button>
+			<Button class="BotOptionsButton" id="FillEnemyButton" onactivate="SetBotOptions('3')">
+				<Label class="ButtonLabel" text="#bot_options_3"/>
+			</Button>
+			<Button class="BotOptionsButton" id="NoButton" onactivate="SetBotOptions('4')">
+				<Label class="ButtonLabel" text="#bot_options_4"/>
 			</Button>
 		</Panel>
 	</Panel>

@@ -7,22 +7,27 @@
 		<include src="file://{resources}/scripts/custom_game/cards.js" /> 
 	</scripts>
 
-	<Panel>
+	<Panel hittest="false">
 		<Panel id="CardsContainer">
 			<Panel class="CardPanel" id="CardPanel1" onmouseout="DOTAHideAbilityTooltip()">
 				<Image class="CardButton" id="CardButton1" scaling="stretch-to-fit-y-preserve-aspect" onactivate="UseCard('1')" />
+				<Image class="DiscardButton" id="DiscardButton1" src="file://{images}control_icons/x_close.png" onactivate="DiscardCard('1')" />
 			</Panel>
 			<Panel class="CardPanel" id="CardPanel2" onmouseout="DOTAHideAbilityTooltip()">
 				<Image class="CardButton" id="CardButton2" scaling="stretch-to-fit-y-preserve-aspect" onactivate="UseCard('2')" />
+				<Image class="DiscardButton" id="DiscardButton2" src="file://{images}control_icons/x_close.png" onactivate="DiscardCard('2')" />
 			</Panel>
 			<Panel class="CardPanel" id="CardPanel3" onmouseout="DOTAHideAbilityTooltip()">
 				<Image class="CardButton" id="CardButton3" scaling="stretch-to-fit-y-preserve-aspect" onactivate="UseCard('3')" />
+				<Image class="DiscardButton" id="DiscardButton3" src="file://{images}control_icons/x_close.png" onactivate="DiscardCard('3')" />
 			</Panel>
 			<Panel class="CardPanel" id="CardPanel4" onmouseout="DOTAHideAbilityTooltip()">
 				<Image class="CardButton" id="CardButton4" scaling="stretch-to-fit-y-preserve-aspect" onactivate="UseCard('4')" />
+				<Image class="DiscardButton" id="DiscardButton4" src="file://{images}control_icons/x_close.png" onactivate="DiscardCard('4')" />
 			</Panel>
 			<Panel class="CardPanel" id="CardPanel5" onmouseout="DOTAHideAbilityTooltip()">
 				<Image class="CardButton" id="CardButton5" scaling="stretch-to-fit-y-preserve-aspect" onactivate="UseCard('5')" />
+				<Image class="DiscardButton" id="DiscardButton5" src="file://{images}control_icons/x_close.png" onactivate="DiscardCard('5')" />
 			</Panel>
 		</Panel>
 	</Panel>

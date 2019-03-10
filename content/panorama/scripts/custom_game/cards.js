@@ -81,6 +81,10 @@ function UseCard(slot) {
 	}
 }
 
+function DiscardCard(slot) {
+	GameEvents.SendCustomGameEventToServer("player_discarded_card", {player_id: Players.GetLocalPlayer(), card_slot: slot})
+}
+
 // Utility functions
 function FindDotaHudElement (id) {
 	return GetDotaHud().FindChildTraverse(id);

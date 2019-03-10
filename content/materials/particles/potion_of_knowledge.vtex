@@ -6,7 +6,7 @@
 		"CDmeInputTexture"
 		{
 			"m_name" "string" "0"
-			"m_fileName" "string" "materials/particles/card_potion_of_knowledge.png"
+			"m_fileName" "string" "materials/particles/potion_of_knowledge.png"
 			"m_colorSpace" "string" "srgb"
 			"m_typeString" "string" "2D"
 		}

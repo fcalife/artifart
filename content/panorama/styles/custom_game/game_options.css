@@ -58,3 +58,40 @@
 	font-size: 20;
 	font-weight: bold;
 }
+
+#BotOptionsContainer
+{
+	width: 400px;
+	height: 250px;
+	position: 525px 58px 0px;
+	background-color: #000000f0;
+	flow-children: down;
+	border-radius: 10px;
+	visibility: collapse;
+}
+
+.BotOptionsLabel
+{
+	color: #ffffffff;
+	margin-top: 10px;
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 24;
+	font-weight: bold;
+}
+
+.BotOptionsButton
+{
+	width: 95%;
+	height: 40px;
+	margin-top: 10px;
+	horizontal-align: center;
+	flow-children: right;
+	border-radius: 8px;
+	background-color: #ffffffb0;
+}
+
+.BotOptionsButton:hover
+{
+	pre-transform-scale2d: 1.04;
+}

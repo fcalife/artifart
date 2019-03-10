@@ -15,11 +15,9 @@
 	max-height: 200px;
 	margin-top: 5px;
 	margin-bottom: 5px;
-	background-image: url("s2r://panorama/images/hud/reborn/ability_bg_psd.vtex");
 	background-size: 100% 100%;
 	horizontal-align: center;
 	border-radius: 10px;
-	box-shadow: fill #000000df -6px -6px 8px 12px;
 	visibility: collapse;
 }
 
@@ -29,10 +27,22 @@
 	margin-bottom: 2px;
 	horizontal-align: center;
 	tooltip-position: right;
+	tooltip-body-position: 50% 100%;
+	box-shadow: fill #000000df -6px -6px 8px 12px;
 }
 
 .CardButton:hover
 {
 	background-color: #ffffff20;
 	saturation: 1.2;
+}
+
+.DiscardButton
+{
+	margin-top: 6px;
+	margin-left: 10px;
+	horizontal-align: left;
+	vertical-align: top;
+	height: 25px;
+	width: 25px;
 }

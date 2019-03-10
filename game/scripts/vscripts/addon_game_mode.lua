@@ -14,7 +14,7 @@ require('internal/util')
 
 _G.GAME_SPEED_MULTIPLIER = 1
 _G.MAX_CARDS = 5
-_G.CARD_COUNT = 46
+_G.CARD_COUNT = 57
 
 function Precache(context)
 
@@ -30,6 +30,7 @@ function Precache(context)
 	-- Main
 	PrecacheResource("particle_folder", "particles/cards", context)
 	PrecacheResource("soundfile", "soundevents/artifart_soundevents.vsndevts", context)
+	PrecacheResource("soundfile", "soundevents/soundevents_conquest.vsndevts", context)
 
 	-- Card-specific
 	PrecacheResource("particle", "particles/econ/items/axe/axe_helm_shoutmask/axe_beserkers_call_owner_shoutmask.vpcf", context)
@@ -44,6 +45,13 @@ function Precache(context)
 	PrecacheResource("particle", "particles/units/heroes/hero_ursa/ursa_enrage_hero_effect.vpcf", context)
 	PrecacheResource("particle", "particles/econ/events/ti7/fountain_regen_ti7.vpcf", context)
 	PrecacheResource("particle", "particles/units/heroes/hero_centaur/centaur_return.vpcf", context)
+	PrecacheResource("particle", "particles/econ/items/legion/legion_fallen/legion_fallen_press.vpcf", context)
+	PrecacheResource("particle", "particles/units/heroes/hero_techies/techies_suicide.vpcf", context)
+	PrecacheResource("particle", "particles/status_fx/status_effect_lone_druid_savage_roar.vpcf", context)
+	PrecacheResource("particle", "particles/econ/items/bloodseeker/bloodseeker_eztzhok_weapon/bloodseeker_bloodrage_eztzhok.vpcf", context)
+	PrecacheResource("particle", "particles/status_fx/status_effect_bloodrage.vpcf", context)
+	PrecacheResource("particle", "particles/econ/items/spirit_breaker/spirit_breaker_iron_surge/spirit_breaker_charge_iron.vpcf", context)
+	PrecacheResource("particle", "particles/units/heroes/hero_pangolier/pangolier_defense_stance_shield.vpcf", context)
 
 	-- We done
 	print("Finished pre-load precache")
