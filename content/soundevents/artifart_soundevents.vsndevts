@@ -413,3 +413,227 @@
 		}
 	}
 }
+
+"Artifart.NetherWardZap"
+{
+	"operator_stacks"
+	{
+		"update_stack"
+		{
+			"reference_operator"
+			{
+				"operator"				"sos_reference_stack"
+				"reference_stack"		"dota_update_default"
+				"operator_variables"
+				{
+					"vsnd_files"
+					{
+						"value"
+						{
+							"value0"	"sounds/weapons/hero/pugna/projectile_impact01.vsnd"
+						}
+					}
+					"volume"			{   "value"     "1.000000"  }
+					"pitch_rand_min"	{   "value"     "0.000000"  }
+					"pitch_rand_max"	{   "value"     "0.200000"  }
+					"pitch"				{   "value"     "1.000000"  }
+					"soundlevel"		{   "value"     "100.00000" }
+					"distance_max"		{   "value"     "1600.000"  }
+					"event_type"		{   "value"     "1.000000"  }
+				}
+			}
+		}
+	}
+}
+
+"Artifart.NetherWardZapTarget"
+{
+	"operator_stacks"
+	{
+		"update_stack"
+		{
+			"reference_operator"
+			{
+				"operator"				"sos_reference_stack"
+				"reference_stack"		"dota_update_default"
+				"operator_variables"
+				{
+					"vsnd_files"
+					{
+						"value"
+						{
+							"value0"	"sounds/weapons/hero/pugna/attack.vsnd"
+						}
+					}
+					"volume"			{   "value"     "1.000000"  }
+					"pitch_rand_min"	{   "value"     "0.000000"  }
+					"pitch_rand_max"	{   "value"     "0.200000"  }
+					"pitch"				{   "value"     "1.000000"  }
+					"soundlevel"		{   "value"     "100.00000" }
+					"distance_max"		{   "value"     "1600.000"  }
+					"event_type"		{   "value"     "1.000000"  }
+				}
+			}
+		}
+	}
+}
+
+"Artifart.RavageCast"
+{
+	"operator_stacks"
+	{
+		"update_stack"
+		{
+			"reference_operator"
+			{
+				"operator"				"sos_reference_stack"
+				"reference_stack"		"dota_update_default"
+				"operator_variables"
+				{
+					"vsnd_files"
+					{
+						"value"
+						{
+							"value0"	"sounds/weapons/hero/tidehunter/tidehunter_ravage.vsnd"
+						}
+					}
+					"volume"			{   "value"     "0.900000"  }
+					"pitch_rand_min"	{   "value"     "0.000000"  }
+					"pitch_rand_max"	{   "value"     "0.050000"  }
+					"pitch"				{   "value"     "1.100000"  }
+					"soundlevel"		{   "value"     "100.00000" }
+					"distance_max"		{   "value"     "1600.000"  }
+					"event_type"		{   "value"     "1.000000"  }
+				}
+			}
+		}
+	}
+}
+
+"Artifart.RavageHit"
+{
+	"operator_stacks"
+	{
+		"update_stack"
+		{
+			"reference_operator"
+			{
+				"operator"				"sos_reference_stack"
+				"reference_stack"		"dota_update_default"
+				"operator_variables"
+				{
+					"vsnd_files"
+					{
+						"value"
+						{
+							"value0"	"sounds/physics/deaths/common/body_impact_light_01.vsnd"
+						}
+					}
+					"volume"			{   "value"     "0.650000"  }
+					"pitch_rand_min"	{   "value"     "0.000000"  }
+					"pitch_rand_max"	{   "value"     "0.400000"  }
+					"pitch"				{   "value"     "0.800000"  }
+					"soundlevel"		{   "value"     "100.00000" }
+					"distance_max"		{   "value"     "1600.000"  }
+					"event_type"		{   "value"     "1.000000"  }
+				}
+			}
+		}
+	}
+}
+
+"Artifart.BoltOfDamocles"
+{
+	"operator_stacks"
+	{
+		"update_stack"
+		{
+			"reference_operator"
+			{
+				"operator"				"sos_reference_stack"
+				"reference_stack"		"dota_update_default"
+				"operator_variables"
+				{
+					"vsnd_files"
+					{
+						"value"
+						{
+							"value0"	"sounds/weapons/hero/zuus/gods_wrath_target.vsnd"
+						}
+					}
+					"volume"			{   "value"     "1.350000"  }
+					"pitch_rand_min"	{   "value"     "0.000000"  }
+					"pitch_rand_max"	{   "value"     "0.100000"  }
+					"pitch"				{   "value"     "0.950000"  }
+					"soundlevel"		{   "value"     "100.00000" }
+					"distance_max"		{   "value"     "1600.000"  }
+					"event_type"		{   "value"     "1.000000"  }
+				}
+			}
+		}
+	}
+}
+
+"Artifart.IgniteSpread"
+{
+    "operator_stacks"
+    {
+        "update_stack"
+        {
+            "reference_operator"
+            {
+                "operator"              "sos_reference_stack"
+                "reference_stack"       "dota_update_default"
+                "operator_variables"
+                {
+                    "vsnd_files"
+                    {
+                        "value"
+                        {
+                            "value0"    "sounds/weapons/hero/lina/lagunablade_immortal.vsnd"
+                        }
+                    }
+                    "volume"            {   "value"     "0.750000"  }
+                    "pitch_rand_min"    {   "value"     "0.000000"  }
+                    "pitch_rand_max"    {   "value"     "0.030000"  }
+                    "pitch"             {   "value"     "1.400000"  }
+                    "soundlevel"        {   "value"     "100.00000" }
+                    "distance_max"      {   "value"     "1600.000"  }
+                    "event_type"        {   "value"     "1.000000"  }
+                }
+            }
+        }
+    }
+}
+
+"Artifart.WingfallHammerHit"
+{
+    "operator_stacks"
+    {
+        "update_stack"
+        {
+            "reference_operator"
+            {
+                "operator"              "sos_reference_stack"
+                "reference_stack"       "dota_update_default"
+                "operator_variables"
+                {
+                    "vsnd_files"
+                    {
+                        "value"
+                        {
+                            "value0"    "sounds/weapons/hero/omniknight\wingfall.vsnd"
+                        }
+                    }
+                    "volume"            {   "value"     "0.900000"  }
+                    "pitch_rand_min"    {   "value"     "0.000000"  }
+                    "pitch_rand_max"    {   "value"     "0.030000"  }
+                    "pitch"             {   "value"     "1.300000"  }
+                    "soundlevel"        {   "value"     "100.00000" }
+                    "distance_max"      {   "value"     "1600.000"  }
+                    "event_type"        {   "value"     "1.000000"  }
+                }
+            }
+        }
+    }
+}

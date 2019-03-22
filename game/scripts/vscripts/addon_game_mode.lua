@@ -14,7 +14,7 @@ require('internal/util')
 
 _G.GAME_SPEED_MULTIPLIER = 1
 _G.MAX_CARDS = 5
-_G.CARD_COUNT = 57
+_G.CARD_COUNT = 71
 
 function Precache(context)
 
@@ -31,6 +31,8 @@ function Precache(context)
 	PrecacheResource("particle_folder", "particles/cards", context)
 	PrecacheResource("soundfile", "soundevents/artifart_soundevents.vsndevts", context)
 	PrecacheResource("soundfile", "soundevents/soundevents_conquest.vsndevts", context)
+	PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_lich.vsndevts", context)
+	PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_beastmaster.vsndevts", context)
 
 	-- Card-specific
 	PrecacheResource("particle", "particles/econ/items/axe/axe_helm_shoutmask/axe_beserkers_call_owner_shoutmask.vpcf", context)
@@ -52,6 +54,12 @@ function Precache(context)
 	PrecacheResource("particle", "particles/status_fx/status_effect_bloodrage.vpcf", context)
 	PrecacheResource("particle", "particles/econ/items/spirit_breaker/spirit_breaker_iron_surge/spirit_breaker_charge_iron.vpcf", context)
 	PrecacheResource("particle", "particles/units/heroes/hero_pangolier/pangolier_defense_stance_shield.vpcf", context)
+	PrecacheResource("particle", "particles/units/heroes/hero_lich/lich_chain_frost.vpcf", context)
+	PrecacheResource("particle", "particles/econ/items/pugna/pugna_ward_ti5/pugna_ward_attack_light_ti_5.vpcf", context)
+	PrecacheResource("particle", "particles/econ/items/pugna/pugna_ward_ti5/pugna_ward_attack_medium_ti_5.vpcf", context)
+	PrecacheResource("particle", "particles/econ/items/pugna/pugna_ward_ti5/pugna_ward_attack_heavy_ti_5.vpcf", context)
+	PrecacheResource("particle", "particles/units/heroes/hero_chen/chen_hand_of_god.vpcf", context)
+	PrecacheResource("particle", "particles/econ/items/omniknight/hammer_ti6_immortal/omniknight_purification_immortal_cast.vpcf", context)
 
 	-- We done
 	print("Finished pre-load precache")

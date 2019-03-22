@@ -28,7 +28,9 @@ function GameMode:OnHeroInGame(hero)
 	print(hero:GetUnitName() .. " spawned in game for the first time.")
 	if IsServer() then
 		if not PlayerResource:IsFakeClient(hero:GetPlayerID()) then
-			hero:AddItemByName("item_starter_deck")
+			Timers:CreateTimer(1, function()
+				hero:AddItemByName("item_starter_deck")
+			end)
 		end
 	end
 end
@@ -46,7 +48,7 @@ function GameMode:OnGameInProgress()
 	if IsServer() then
 		print("The horn has sounded")
 		for i = 0, 200 do
-			Timers:CreateTimer(i * 45, function()
+			Timers:CreateTimer(i * 40, function()
 				Artifart:AddPeriodicCards()
 			end)
 		end
@@ -82,7 +84,19 @@ end
 
 -- Player intentionally discarded a card
 function GameMode:PlayerDiscardedCard(keys)
+	local hero = PlayerResource:GetSelectedHeroEntity(keys.player_id)
+	if not hero:IsAlive() then
+		return nil
+	end
+
+	-- Discard 2 = gain 1 mechanics
 	Artifart:ConsumeCard(keys.player_id, keys.card_slot)
+	if hero:HasModifier("modifier_card_dust") then
+		hero:RemoveModifierByName("modifier_card_dust")
+		Artifart:AddRandomCard(keys.player_id)
+	else
+		hero:AddNewModifier(hero, nil, "modifier_card_dust", {})
+	end
 end
 
 -- Game speed change function
@@ -130,29 +144,61 @@ function GameMode:SetBotOptions(keys)
 				radiant_bot_count = 5
 			end
 		end
-		local current_bot_hero = 1
 		local bot_heroes = {}
 		bot_heroes[1] = "npc_dota_hero_sven"
 		bot_heroes[2] = "npc_dota_hero_skeleton_king"
-		bot_heroes[3] = "npc_dota_hero_lina"
+		bot_heroes[3] = "npc_dota_hero_sniper"
 		bot_heroes[4] = "npc_dota_hero_lion"
 		bot_heroes[5] = "npc_dota_hero_luna"
 		bot_heroes[6] = "npc_dota_hero_dragon_knight"
 		bot_heroes[7] = "npc_dota_hero_tiny"
 		bot_heroes[8] = "npc_dota_hero_bloodseeker"
 		bot_heroes[9] = "npc_dota_hero_vengefulspirit"
+		bot_heroes[10] = "npc_dota_hero_lina"
+		bot_heroes[11] = "npc_dota_hero_axe"
+		bot_heroes[12] = "npc_dota_hero_bane"
+		bot_heroes[13] = "npc_dota_hero_bounty_hunter"
+		bot_heroes[14] = "npc_dota_hero_bristleback"
+		bot_heroes[15] = "npc_dota_hero_chaos_knight"
+		bot_heroes[16] = "npc_dota_hero_crystal_maiden"
+		bot_heroes[17] = "npc_dota_hero_dazzle"
+		bot_heroes[18] = "npc_dota_hero_death_prophet"
+		bot_heroes[19] = "npc_dota_hero_drow_ranger"
+		bot_heroes[20] = "npc_dota_hero_earthshaker"
+		bot_heroes[21] = "npc_dota_hero_jakiro"
+		bot_heroes[22] = "npc_dota_hero_juggernaut"
+		bot_heroes[23] = "npc_dota_hero_kunkka"
+		bot_heroes[24] = "npc_dota_hero_lich"
+		bot_heroes[25] = "npc_dota_hero_necrolyte"
+		bot_heroes[26] = "npc_dota_hero_omniknight"
+		bot_heroes[27] = "npc_dota_hero_oracle"
+		bot_heroes[28] = "npc_dota_hero_phantom_assassin"
+		bot_heroes[29] = "npc_dota_hero_pudge"
+		bot_heroes[30] = "npc_dota_hero_sand_king"
+		bot_heroes[31] = "npc_dota_hero_nevermore"
+		bot_heroes[32] = "npc_dota_hero_skywrath_mage"
+		bot_heroes[33] = "npc_dota_hero_windrunner"
+		bot_heroes[34] = "npc_dota_hero_zuus"
+		bot_heroes[35] = "npc_dota_hero_viper"
+		bot_heroes[36] = "npc_dota_hero_warlock"
+		bot_heroes[37] = "npc_dota_hero_witch_doctor"
+		local current_bot_hero = RandomInt(1, #bot_heroes)
 		if radiant_bot_count > 0 then
 			print("Adding bots to radiant team")
 			for i = 1, radiant_bot_count do
-				Tutorial:AddBot(bot_heroes[current_bot_hero], "", "", true)
-				current_bot_hero = current_bot_hero + 1
+				while PlayerResource:IsHeroSelected(bot_heroes[current_bot_hero]) do
+					current_bot_hero = RandomInt(1, #bot_heroes)
+				end
+				Tutorial:AddBot(bot_heroes[current_bot_hero], "", "hard", true)
 			end
 		end
 		if dire_bot_count > 0 then
 			print("Adding bots to dire team")
 			for i = 1, dire_bot_count do
-				Tutorial:AddBot(bot_heroes[current_bot_hero], "", "", false)
-				current_bot_hero = current_bot_hero + 1
+				while PlayerResource:IsHeroSelected(bot_heroes[current_bot_hero]) do
+					current_bot_hero = RandomInt(1, #bot_heroes)
+				end
+				Tutorial:AddBot(bot_heroes[current_bot_hero], "", "hard", false)
 			end
 		end
 		Tutorial:StartTutorialMode()

@@ -1,4 +1,4 @@
-<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:vpcf16:version{261b3cba-02c7-424f-854b-c432c6f018d1} -->
+<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:vpcf19:version{aafc65d8-7a5a-4e01-bd8d-3ac118422503} -->
 {
 	_class = "CParticleSystemDefinition"
 	m_bShouldHitboxesFallbackToRenderBounds = false
@@ -39,13 +39,14 @@
 		},
 		{
 			_class = "C_OP_BasicMovement"
+			m_Gravity = [ 0.0, 0.0, -700.0 ]
 		},
 		{
 			_class = "C_OP_PositionLock"
 		},
 		{
 			_class = "C_OP_InterpolateRadius"
-			m_flStartTime = 0.75
+			m_flStartTime = 0.6
 			m_flEndScale = 0.0
 			m_flBias = 0.75
 		},
@@ -99,8 +100,16 @@
 	[
 		{
 			_class = "C_OP_ContinuousEmitter"
-			m_flEmissionDuration = 1.25
-			m_flEmitRate = 25.0
+			m_flEmissionDuration = 
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 1.25
+			}
+			m_flEmitRate = 
+			{
+				m_nType = "PF_TYPE_LITERAL"
+				m_flLiteralValue = 25.0
+			}
 		},
 	]
 	m_controlPointConfigurations = 

@@ -29,9 +29,14 @@
 			"02"
 			{
 				"var_type"					"FIELD_INTEGER"
-				"mute_duration"				"3"
+				"spell_amp"					"30"
 			}
 			"03"
+			{
+				"var_type"					"FIELD_INTEGER"
+				"mute_duration"				"3"
+			}
+			"04"
 			{
 				"var_type"					"FIELD_INTEGER"
 				"mute_dps"					"3"
@@ -73,5 +78,69 @@
 		"ItemKillable"					"0"
 		"ItemDroppable"					"0"
 		"ItemCost"						"2500"
+	}
+
+	"item_recipe_aghanim_soul"
+	{
+		"ID"					"7003"
+		"BaseClass"				"item_datadriven"
+		"ItemCost"				"0"
+		"ItemRecipe"			"1"
+		"ItemResult"			"item_aghanim_soul"
+		"ItemRequirements"
+		{
+			"01"				"item_ultimate_scepter;item_aghanim_sanctum"
+		}
+	}
+
+	"item_aghanim_sanctum"
+	{
+		"ID"							"7004"
+		"BaseClass"						"item_circlet"
+		"AbilityTextureName" 			"item_branches"
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"ItemCost"						"0"
+		"ShouldBeInitiallySuggested"	"0"
+		"ItemPurchasable"				"0"
+
+		"AbilitySpecial"
+		{
+			"01"
+			{
+				"var_type"				"FIELD_INTEGER"
+				"bonus_all_stats"		"5"
+			}
+		}
+	}
+
+	"item_aghanim_soul"
+	{
+		"ID"							"7005"
+		"BaseClass"						"item_ultimate_scepter"
+		"AbilityTextureName" 			"custom/item_aghanim_sanctum"
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_FRIENDLY"
+		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO"
+		"AbilityUnitTargetFlags"		"DOTA_UNIT_TARGET_FLAG_NOT_CREEP_HERO"
+		"ItemPurchasable"				"0"
+
+		"AbilitySpecial"
+		{
+			"01"
+			{
+				"var_type"				"FIELD_INTEGER"
+				"bonus_all_stats"		"30"
+			}
+			"02"
+			{
+				"var_type"				"FIELD_INTEGER"
+				"bonus_health"			"400"
+			}
+			"03"
+			{
+				"var_type"				"FIELD_INTEGER"
+				"bonus_mana"			"640"
+			}
+		}
 	}
 }

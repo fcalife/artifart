@@ -4,6 +4,10 @@ item_starter_deck = class({})
 
 function item_starter_deck:OnSpellStart()
 	if IsServer() then
+		if self:GetCaster():IsTempestDouble() then
+			self:Destroy()
+			return true
+		end
 		local player_id = self:GetCaster():GetPlayerID()
 		Artifart:InitializeSinglePlayer(player_id)
 		Artifart:AddRandomCard(player_id)
@@ -17,6 +21,10 @@ item_booster_pack = class({})
 
 function item_booster_pack:OnSpellStart()
 	if IsServer() then
+		if self:GetCaster():IsTempestDouble() then
+			self:Destroy()
+			return true
+		end
 		local player_id = self:GetCaster():GetPlayerID()
 		Artifart:InitializeSinglePlayer(player_id)
 		Artifart:AddRandomCard(player_id)
@@ -24,6 +32,21 @@ function item_booster_pack:OnSpellStart()
 		self:Destroy()
 	end
 end
+
+LinkLuaModifier("modifier_card_dust", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_dust = class({})
+
+function modifier_card_dust:IsHidden() return false end
+function modifier_card_dust:IsDebuff() return false end
+function modifier_card_dust:IsPurgable() return false end
+function modifier_card_dust:GetAttributes() return MODIFIER_ATTRIBUTE_PERMANENT + MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_dust:GetTexture()
+	return "custom/card_dust"
+end
+
+
 
 card_leather_armor = class({})
 
@@ -334,7 +357,7 @@ function card_grand_melee:OnSpellStart()
 		EmitSoundOnLocationWithCaster(target_loc, "Artifart.ForwardCharge", caster)
 
 		-- Find targets
-		local targets = FindUnitsInRadius(caster:GetTeamNumber(), target_loc, nil, 1000, DOTA_UNIT_TARGET_TEAM_BOTH, DOTA_UNIT_TARGET_HERO + DOTA_UNIT_TARGET_BASIC, DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES, FIND_ANY_ORDER, false)
+		local targets = FindUnitsInRadius(caster:GetTeamNumber(), target_loc, nil, 1000, DOTA_UNIT_TARGET_TEAM_BOTH, DOTA_UNIT_TARGET_HERO, DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES, FIND_ANY_ORDER, false)
 		for _, target in pairs(targets) do
 			target:AddNewModifier(caster, nil, "modifier_card_grand_melee", {x = target_loc.x, y = target_loc.y, duration = 10})
 
@@ -386,21 +409,34 @@ function modifier_card_grand_melee:OnCreated(keys)
 	if IsServer() then
 		self.origin = Vector(keys.x, keys.y, 0)
 		self.target = false
-		self:StartIntervalThink(0.03)
+
+		local parent = self:GetParent()
+		local enemies = FindUnitsInRadius(parent:GetTeamNumber(), self.origin, nil, 1000, DOTA_UNIT_TARGET_TEAM_ENEMY, DOTA_UNIT_TARGET_HERO, DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES + DOTA_UNIT_TARGET_FLAG_NO_INVIS + DOTA_UNIT_TARGET_FLAG_FOW_VISIBLE, FIND_ANY_ORDER, false)
+		if #enemies > 0 then
+			self.target = enemies[1]
+			self.target:AddNewModifier(parent, nil, "modifier_card_grand_melee_vision", {})
+			parent:MoveToTargetToAttack(self.target)
+			parent:SetForceAttackTarget(self.target)
+			self:StartIntervalThink(0.03)
+		else
+			self:Destroy()
+		end
 	end
 end
 
 function modifier_card_grand_melee:OnDestroy()
 	if IsServer() then
 		self:GetParent():SetForceAttackTarget(nil)
+		if self.target then
+			self.target:RemoveModifierByName("modifier_card_grand_melee_vision")
+		end
 	end
 end
 
 function modifier_card_grand_melee:OnIntervalThink()
-	if (not self.target) or (not self.target:IsAlive()) then
-		self.target = self:LookForTarget(self.origin)
-		if self.target then
-			self:GetParent():SetForceAttackTarget(self.target)
+	if IsServer() then
+		if self.target and self.target:IsAlive() then
+			self:GetParent():MoveToTargetToAttack(self.target)
 		else
 			self:Destroy()
 		end
@@ -418,14 +454,20 @@ function modifier_card_grand_melee:GetModifierAttackSpeedBonus_Constant()
 	return 100
 end
 
-function modifier_card_grand_melee:LookForTarget(origin)
-	local parent = self:GetParent()
-	local enemies = FindUnitsInRadius(parent:GetTeamNumber(), origin, nil, 1000, DOTA_UNIT_TARGET_TEAM_ENEMY, DOTA_UNIT_TARGET_HERO + DOTA_UNIT_TARGET_BASIC, DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES + DOTA_UNIT_TARGET_FLAG_NO_INVIS + DOTA_UNIT_TARGET_FLAG_FOW_VISIBLE, FIND_ANY_ORDER, false)
-	if #enemies > 0 then
-		return enemies[1]
-	else
-		return nil
-	end
+LinkLuaModifier("modifier_card_grand_melee_vision", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_grand_melee_vision = class({})
+
+function modifier_card_grand_melee_vision:IsDebuff() return true end
+function modifier_card_grand_melee_vision:IsHidden() return true end
+function modifier_card_grand_melee_vision:IsPurgable() return false end
+function modifier_card_grand_melee_vision:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_grand_melee_vision:CheckState()
+	local states = {
+		[MODIFIER_STATE_PROVIDES_VISION] = true
+	}
+	return states
 end
 
 
@@ -485,6 +527,7 @@ end
 function modifier_item_apotheosis_blade:DeclareFunctions()
 	local funcs = {
 		MODIFIER_PROPERTY_PREATTACK_BONUS_DAMAGE,
+		MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE,
 		MODIFIER_EVENT_ON_ATTACK_LANDED,
 		MODIFIER_EVENT_ON_DEATH
 	}
@@ -493,6 +536,10 @@ end
 
 function modifier_item_apotheosis_blade:GetModifierPreAttack_BonusDamage()
 	return self:GetAbility():GetSpecialValueFor("bonus_damage")
+end
+
+function modifier_item_apotheosis_blade:GetModifierSpellAmplify_Percentage()
+	return self:GetAbility():GetSpecialValueFor("spell_amp")
 end
 
 function modifier_item_apotheosis_blade:OnDeath(keys)
@@ -613,12 +660,13 @@ function card_forward_charge:OnSpellStart()
 		-- Find targets
 		local allies = FindUnitsInRadius(caster:GetTeamNumber(), target_loc, nil, 1000, DOTA_UNIT_TARGET_TEAM_FRIENDLY, DOTA_UNIT_TARGET_HERO + DOTA_UNIT_TARGET_BASIC, DOTA_UNIT_TARGET_FLAG_INVULNERABLE + DOTA_UNIT_TARGET_FLAG_OUT_OF_WORLD, FIND_ANY_ORDER, false)
 		for _, ally in pairs(allies) do
-			ally:AddNewModifier(target, nil, "modifier_card_forward_charge", {duration = 10})
+			ally:AddNewModifier(caster, nil, "modifier_card_forward_charge", {target_index = target:entindex(), duration = 10})
 
 			local ally_pfx = ParticleManager:CreateParticle("particles/cards/card_use_forward_charge_ally.vpcf", PATTACH_ABSORIGIN_FOLLOW, ally)
 			ParticleManager:SetParticleControl(ally_pfx, 0, ally:GetAbsOrigin())
 			ParticleManager:ReleaseParticleIndex(ally_pfx)
 		end
+		target:AddNewModifier(caster, nil, "modifier_card_forward_charge_vision", {duration = 10})
 
 		-- Particles
 		local taunt_pfx = ParticleManager:CreateParticle("particles/econ/items/axe/axe_helm_shoutmask/axe_beserkers_call_owner_shoutmask.vpcf", PATTACH_CUSTOMORIGIN, nil)
@@ -665,7 +713,8 @@ end
 
 function modifier_card_forward_charge:OnCreated(keys)
 	if IsServer() then
-		self.target = self:GetCaster()
+		self.target = EntIndexToHScript(keys.target_index)
+		self:GetParent():MoveToTargetToAttack(self.target)
 		self:GetParent():SetForceAttackTarget(self.target)
 		self:StartIntervalThink(0.03)
 	end
@@ -694,6 +743,22 @@ end
 
 function modifier_card_forward_charge:GetModifierDamageOutgoing_Percentage()
 	return 100
+end
+
+LinkLuaModifier("modifier_card_forward_charge_vision", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_forward_charge_vision = class({})
+
+function modifier_card_forward_charge_vision:IsDebuff() return true end
+function modifier_card_forward_charge_vision:IsHidden() return true end
+function modifier_card_forward_charge_vision:IsPurgable() return false end
+function modifier_card_forward_charge_vision:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_forward_charge_vision:CheckState()
+	local states = {
+		[MODIFIER_STATE_PROVIDES_VISION] = true
+	}
+	return states
 end
 
 
@@ -877,7 +942,7 @@ end
 function modifier_card_strafing_run:DeclareFunctions()
 	local funcs = {
 		MODIFIER_PROPERTY_MOVESPEED_BONUS_PERCENTAGE,
-		MODIFIER_EVENT_ON_ATTACK_LANDED
+		MODIFIER_EVENT_ON_TAKEDAMAGE
 	}
 	return funcs
 end
@@ -886,11 +951,11 @@ function modifier_card_strafing_run:GetModifierMoveSpeedBonus_Percentage()
 	return 50
 end
 
-function modifier_card_strafing_run:OnAttackLanded(keys)
+function modifier_card_strafing_run:OnTakeDamage(keys)
 	if IsServer() then
 		if keys.attacker == self:GetParent() then
-			if not (keys.target:IsHero() or keys.target:IsBuilding() or keys.target:IsBoss()) then
-				keys.target:Kill(nil, keys.attacker)
+			if not (keys.unit:IsHero() or keys.unit:IsBuilding() or keys.unit:IsBoss()) then
+				keys.unit:Kill(nil, keys.attacker)
 			end
 		end
 	end
@@ -1073,20 +1138,22 @@ end
 
 function modifier_card_bristleback:DeclareFunctions()
 	local funcs = {
-		MODIFIER_EVENT_ON_ATTACK_LANDED
+		MODIFIER_EVENT_ON_TAKEDAMAGE
 	}
 	return funcs
 end
 
-function modifier_card_bristleback:OnAttackLanded(keys)
+function modifier_card_bristleback:OnTakeDamage(keys)
 	if IsServer() then
-		if keys.attacker == self:GetParent() then
-			if not keys.target:HasModifier("modifier_card_bristleback_debuff") then
-				keys.target:EmitSound("Artifart.ViscousNasalGoo")
+		if keys.attacker == self:GetParent() and (keys.unit:GetTeam() ~= keys.attacker:GetTeam()) then
+			if not keys.unit:HasModifier("modifier_card_bristleback_debuff") then
+				keys.unit:EmitSound("Artifart.ViscousNasalGoo")
 			end
-			keys.target:AddNewModifier(self:GetParent(), nil, "modifier_card_bristleback_debuff", {duration = 3})
-			local modifier_goo = keys.target:FindModifierByName("modifier_card_bristleback_debuff")
-			modifier_goo:SetStackCount(modifier_goo:GetStackCount() + 1)
+			keys.unit:AddNewModifier(self:GetParent(), nil, "modifier_card_bristleback_debuff", {duration = 3})
+			local modifier_goo = keys.unit:FindModifierByName("modifier_card_bristleback_debuff")
+			if modifier_goo then
+				modifier_goo:IncrementStackCount()
+			end
 		end
 	end
 end
@@ -1671,28 +1738,31 @@ function modifier_card_heroic_resolve:GetTexture()
 	return "custom/card_heroic_resolve"
 end
 
-function modifier_card_heroic_resolve:OnCreated(keys)
-	if IsServer() then
-		self:StartIntervalThink(1.0)
-	end
-end
-
-function modifier_card_heroic_resolve:OnIntervalThink()
-	if IsServer() then
-		self:SetStackCount(self:GetStackCount() + 3)
-		self:GetParent():CalculateStatBonus()
-	end
-end
-
 function modifier_card_heroic_resolve:DeclareFunctions()
 	local funcs = {
-		MODIFIER_PROPERTY_EXTRA_HEALTH_BONUS
+		MODIFIER_PROPERTY_EXTRA_HEALTH_BONUS,
+		MODIFIER_PROPERTY_MODEL_SCALE,
+		MODIFIER_EVENT_ON_DEATH
 	}
 	return funcs
 end
 
+function modifier_card_heroic_resolve:GetModifierModelScale()
+	return math.min(4 * self:GetStackCount(), 100)
+end
+
 function modifier_card_heroic_resolve:GetModifierExtraHealthBonus()
-	return self:GetStackCount()
+	return 150 * self:GetStackCount()
+end
+
+function modifier_card_heroic_resolve:OnDeath(keys)
+	if IsServer() then
+		if keys.attacker == self:GetParent() then
+			if keys.unit:IsRealHero() then
+				self:IncrementStackCount()
+			end
+		end
+	end
 end
 
 
@@ -1742,27 +1812,36 @@ function modifier_card_rising_anger:GetTexture()
 	return "custom/card_rising_anger"
 end
 
-function modifier_card_rising_anger:OnCreated(keys)
-	if IsServer() then
-		self:StartIntervalThink(1.0)
-	end
-end
-
-function modifier_card_rising_anger:OnIntervalThink()
-	if IsServer() then
-		self:SetStackCount(self:GetStackCount() + 1)
-	end
-end
-
 function modifier_card_rising_anger:DeclareFunctions()
 	local funcs = {
-		MODIFIER_PROPERTY_PREATTACK_BONUS_DAMAGE
+		MODIFIER_PROPERTY_PREATTACK_BONUS_DAMAGE,
+		MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE,
+		MODIFIER_PROPERTY_MODEL_SCALE,
+		MODIFIER_EVENT_ON_DEATH
 	}
 	return funcs
 end
 
+function modifier_card_rising_anger:GetModifierModelScale()
+	return math.min(4 * self:GetStackCount(), 100)
+end
+
+function modifier_card_rising_anger:GetModifierSpellAmplify_Percentage()
+	return 8 * self:GetStackCount()
+end
+
 function modifier_card_rising_anger:GetModifierPreAttack_BonusDamage()
-	return self:GetStackCount()
+	return 30 * self:GetStackCount()
+end
+
+function modifier_card_rising_anger:OnDeath(keys)
+	if IsServer() then
+		if keys.attacker == self:GetParent() then
+			if keys.unit:IsRealHero() then
+				self:IncrementStackCount()
+			end
+		end
+	end
 end
 
 
@@ -1789,7 +1868,7 @@ function card_the_oath:OnSpellStart()
 		ParticleManager:ReleaseParticleIndex(cast_pfx)
 
 		-- Apply modifier
-		target:AddNewModifier(caster, self, "modifier_card_the_oath", {})
+		target:AddNewModifier(caster, self, "modifier_card_the_oath", {duration = 60})
 
 		-- Consume card
 		local card_slot = Artifart:HasCard(player_id, "the_oath")
@@ -2262,16 +2341,16 @@ end
 
 function modifier_card_demagicking_maul:DeclareFunctions()
 	local funcs = {
-		MODIFIER_EVENT_ON_ATTACK_LANDED
+		MODIFIER_EVENT_ON_TAKEDAMAGE
 	}
 	return funcs
 end
 
-function modifier_card_demagicking_maul:OnAttackLanded(keys)
+function modifier_card_demagicking_maul:OnTakeDamage(keys)
 	if IsServer() then
-		if keys.attacker == self:GetParent() then
-			if keys.target:IsHero() then
-				keys.target:AddNewModifier(self:GetParent(), nil, "modifier_card_demagicking_maul_debuff", {duration = 1})
+		if keys.attacker == self:GetParent() and (keys.unit:GetTeam() ~= keys.attacker:GetTeam()) then
+			if keys.unit:IsHero() then
+				keys.unit:AddNewModifier(self:GetParent(), nil, "modifier_card_demagicking_maul_debuff", {duration = 1})
 			end
 		end
 	end
@@ -2366,12 +2445,14 @@ function modifier_card_coordinated_assault:OnTakeDamage(keys)
 			if keys.unit:HasModifier("modifier_card_coordinated_assault_debuff") then
 				local debuff = keys.unit:FindModifierByName("modifier_card_coordinated_assault_debuff")
 				if debuff:GetCaster() ~= keys.attacker then
-					local current_stacks = debuff:GetStackCount()
 					keys.unit:RemoveModifierByName("modifier_card_coordinated_assault_debuff")
-					keys.unit:AddNewModifier(keys.attacker, nil, "modifier_card_coordinated_assault_debuff", {duration = 1}):SetStackCount(current_stacks + 1)
+					local debuff = keys.unit:AddNewModifier(keys.attacker, nil, "modifier_card_coordinated_assault_debuff", {duration = 1})
+					if debuff then
+						debuff:IncrementStackCount()
+					end
 				end
 			else
-				keys.unit:AddNewModifier(keys.attacker, nil, "modifier_card_coordinated_assault_debuff", {duration = 1}):SetStackCount(1)
+				keys.unit:AddNewModifier(keys.attacker, nil, "modifier_card_coordinated_assault_debuff", {duration = 1})
 			end				
 		end
 	end
@@ -3121,7 +3202,12 @@ function card_tinker:OnSpellStart()
 		ParticleManager:ReleaseParticleIndex(cast_pfx)
 
 		-- Apply modifier
-		target:AddNewModifier(caster, self, "modifier_card_tinker", {})
+		local modifier = target:FindModifierByName("modifier_card_tinker")
+		if modifier then
+			modifier:IncrementStackCount()
+		else
+			target:AddNewModifier(caster, self, "modifier_card_tinker", {})
+		end
 
 		-- Consume card
 		local card_slot = Artifart:HasCard(player_id, "tinker")
@@ -3146,13 +3232,13 @@ end
 
 function modifier_card_tinker:DeclareFunctions()
 	local funcs = {
-		MODIFIER_PROPERTY_COOLDOWN_PERCENTAGE_STACKING
+		MODIFIER_PROPERTY_COOLDOWN_PERCENTAGE
 	}
 	return funcs
 end
 
-function modifier_card_tinker:GetModifierPercentageCooldownStacking()
-	return 20
+function modifier_card_tinker:GetModifierPercentageCooldown()
+	return (1 - 0.8 ^ (1 + self:GetStackCount())) * 100
 end
 
 
@@ -3332,7 +3418,7 @@ end
 
 function modifier_card_time_of_triumph:OnIntervalThink()
 	if IsServer() then
-		self:SetStackCount(self:GetStackCount() - 1)
+		self:DecrementStackCount()
 		if self:GetStackCount() <= 0 then
 			self:Destroy()
 		end
@@ -3662,7 +3748,7 @@ function modifier_card_ignite:GetTexture()
 end
 
 function modifier_card_ignite:GetEffectName()
-	return "particles/units/heroes/hero_ogre_magi/ogre_magi_ignite_debuff.vpcf"
+	return "particles/cards/ignite_debuff.vpcf"
 end
 
 function modifier_card_ignite:GetEffectAttachType()
@@ -3701,6 +3787,13 @@ function modifier_card_ignite:OnIntervalThink()
 			if target ~= parent then
 				target:AddNewModifier(self:GetCaster(), nil, "modifier_card_ignite", {damage = self.damage * 2}):SetStackCount(self.damage * 2)
 				self:Destroy()
+
+				-- Play spread particle/sound
+				target:EmitSound("Artifart.IgniteSpread")
+				local spread_pfx = ParticleManager:CreateParticle("particles/cards/ignite.vpcf", PATTACH_ABSORIGIN_FOLLOW, parent)
+				ParticleManager:SetParticleControlEnt(spread_pfx, 0, parent, PATTACH_POINT_FOLLOW, "attach_hitloc", parent:GetAbsOrigin(), true)
+				ParticleManager:SetParticleControlEnt(spread_pfx, 1, target, PATTACH_POINT_FOLLOW, "attach_hitloc", target:GetAbsOrigin(), true)
+				ParticleManager:ReleaseParticleIndex(spread_pfx)
 				break
 			end
 		end
@@ -3917,27 +4010,23 @@ end
 function modifier_card_relentless_pursuit:OnDestroy()
 	if IsServer() then
 		self:GetParent():SetRenderColor(255, 255, 255)
+		self.target:RemoveModifierByName("modifier_card_relentless_pursuit_debuff")
 	end
 end
 
 function modifier_card_relentless_pursuit:OnIntervalThink()
 	if IsServer() then
-		self:SetStackCount(self:GetStackCount() + 1)
+		self:IncrementStackCount()
 
 		-- Stop, if appropriate
 		local parent = self:GetParent()
 		if not self.target:IsAlive() then
 			self:Destroy()
-		else
-			local targets = FindUnitsInRadius(parent:GetTeamNumber(), parent:GetAbsOrigin(), nil, 200, DOTA_UNIT_TARGET_TEAM_ENEMY, DOTA_UNIT_TARGET_HERO, DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES, FIND_ANY_ORDER, false)
-			for _, target in pairs(targets) do
-				if target == self.target then
-					target:AddNewModifier(parent, nil, "modifier_stunned", {duration = 2})
-					target:EmitSound("Artifart.RelentlessPursuitEnd")
-					self:Destroy()
-					break
-				end
-			end
+		elseif (self.target:GetAbsOrigin() - parent:GetAbsOrigin()):Length2D() < 200 then
+			self.target:AddNewModifier(parent, nil, "modifier_stunned", {duration = 2})
+			self.target:EmitSound("Artifart.RelentlessPursuitEnd")
+			parent:MoveToTargetToAttack(self.target)
+			self:Destroy()
 		end
 	end
 end
@@ -4065,7 +4154,7 @@ function modifier_card_defensive_stance:DeclareFunctions()
 end
 
 function modifier_card_defensive_stance:GetModifierTotalDamageOutgoing_Percentage()
-	return -50
+	return -25
 end
 
 function modifier_card_defensive_stance:GetModifierIncomingDamage_Percentage()
@@ -4127,7 +4216,7 @@ function modifier_card_selemenes_favor:DeclareFunctions()
 end
 
 function modifier_card_selemenes_favor:GetModifierTotalPercentageManaRegen()
-	return 2
+	return 1.5
 end
 
 
@@ -4224,4 +4313,1264 @@ end
 
 function modifier_card_ristul_emblem_debuff:GetModifierPhysicalArmorBonus()
 	return -10
+end
+
+
+
+card_chain_frost = class({})
+
+function card_chain_frost:IsStealable() return false end
+function card_chain_frost:IsHiddenAbilityCastable() return true end
+
+function card_chain_frost:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		caster:EmitSound("Hero_Lich.ChainFrost")
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_chain_frost.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Launch the projectile
+		local chain_frost_projectile = {
+			Target = target,
+			Source = caster,
+			Ability = self,
+			EffectName = "particles/units/heroes/hero_lich/lich_chain_frost.vpcf",
+			iMoveSpeed = 850,
+			bDodgeable = false,
+			bVisibleToEnemies = true,
+			bReplaceExisting = false,
+			bProvidesVision = true,
+			iVisionRadius = 800,
+			iVisionTeamNumber = caster:GetTeamNumber(),
+			ExtraData = {speed = 875, damage = 200, caster_ent = caster:entindex()}
+		}
+		ProjectileManager:CreateTrackingProjectile(chain_frost_projectile)
+
+		-- Prevent re-use of the ability
+		self:SetActivated(false)
+	end
+end
+
+function card_chain_frost:OnProjectileHit_ExtraData(target, location, keys)
+
+	-- If there is no target, do nothing
+	if not target then
+		return nil
+	end
+
+	-- Impact
+	local caster = EntIndexToHScript(keys.caster_ent)
+	if target:IsHero() or target:IsBoss() then
+		target:EmitSound("Hero_Lich.ChainFrostImpact.Hero")
+	else
+		target:EmitSound("Hero_Lich.ChainFrostImpact.Creep")
+	end
+	target:AddNewModifier(caster, nil, "modifier_card_chain_frost", {duration = 2.5})
+	ApplyDamage({victim = target, attacker = caster, damage = keys.damage, damage_type = DAMAGE_TYPE_MAGICAL})
+
+	-- Find a target and iterate
+	local target_found = false
+	local units = FindUnitsInRadius(caster:GetTeamNumber(),	location, nil, 900, DOTA_UNIT_TARGET_TEAM_BOTH, DOTA_UNIT_TARGET_HERO + DOTA_UNIT_TARGET_BASIC, DOTA_UNIT_TARGET_FLAG_NO_INVIS + DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES, FIND_ANY_ORDER, false)
+	for _, unit in pairs(units) do
+		if unit:IsAlive() and unit ~= target then
+			target_found = true
+			local chain_frost_projectile = {
+				Target = unit,
+				Source = target,
+				Ability = self,
+				EffectName = "particles/units/heroes/hero_lich/lich_chain_frost.vpcf",
+				iMoveSpeed = keys.speed,
+				bDodgeable = false,
+				bVisibleToEnemies = true,
+				bReplaceExisting = false,
+				bProvidesVision = true,
+				iVisionRadius = 800,
+				iVisionTeamNumber = caster:GetTeamNumber(),
+				ExtraData = {speed = keys.speed + 25, damage = keys.damage + 25, caster_ent = caster:entindex()}
+			}
+			ProjectileManager:CreateTrackingProjectile(chain_frost_projectile)
+			break
+		end
+	end
+
+	-- If no target was found, consume the ability
+	if not target_found then
+		self:SetActivated(true)
+		local player_id = caster:GetPlayerID()
+		local card_slot = Artifart:HasCard(player_id, "chain_frost")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end			
+
+LinkLuaModifier("modifier_card_chain_frost", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_chain_frost = class({})
+
+function modifier_card_chain_frost:IsHidden() return false end
+function modifier_card_chain_frost:IsDebuff() return true end
+function modifier_card_chain_frost:IsPurgable() return true end
+function modifier_card_chain_frost:GetAttributes() return MODIFIER_ATTRIBUTE_MULTIPLE end
+
+function modifier_card_chain_frost:GetTexture()
+	return "custom/card_chain_frost"
+end
+
+function modifier_card_chain_frost:DeclareFunctions()
+	local funcs = {
+		MODIFIER_PROPERTY_MOVESPEED_BONUS_PERCENTAGE,
+		MODIFIER_PROPERTY_ATTACKSPEED_BONUS_CONSTANT
+	}
+	return funcs
+end
+
+function modifier_card_chain_frost:GetModifierMoveSpeedBonus_Percentage()
+	return -70
+end
+
+function modifier_card_chain_frost:GetModifierAttackSpeedBonus_Constant()
+	return -70
+end
+
+
+
+card_nether_ward = class({})
+
+function card_nether_ward:IsStealable() return false end
+function card_nether_ward:IsHiddenAbilityCastable() return true end
+
+function card_nether_ward:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_nether_ward.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Apply modifier
+		target:AddNewModifier(target, self, "modifier_card_nether_ward", {})
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "nether_ward")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_nether_ward", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_nether_ward = class({})
+
+function modifier_card_nether_ward:IsDebuff() return false end
+function modifier_card_nether_ward:IsHidden() return false end
+function modifier_card_nether_ward:IsPurgable() return false end
+function modifier_card_nether_ward:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_nether_ward:IsAura() return true end
+function modifier_card_nether_ward:GetAuraRadius() return 1500 end
+function modifier_card_nether_ward:GetAuraSearchFlags() return DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES + DOTA_UNIT_TARGET_FLAG_OUT_OF_WORLD + DOTA_UNIT_TARGET_FLAG_INVULNERABLE end
+function modifier_card_nether_ward:GetAuraSearchTeam() return DOTA_UNIT_TARGET_TEAM_ENEMY end
+function modifier_card_nether_ward:GetAuraSearchType() return DOTA_UNIT_TARGET_HERO end
+function modifier_card_nether_ward:GetModifierAura() return "modifier_card_nether_ward_debuff" end
+
+function modifier_card_nether_ward:GetTexture()
+	return "custom/card_nether_ward"
+end
+
+function modifier_card_nether_ward:GetEffectName()
+	return "particles/cards/nether_ward_aura.vpcf"
+end
+
+LinkLuaModifier("modifier_card_nether_ward_debuff", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_nether_ward_debuff = class({})
+
+function modifier_card_nether_ward_debuff:IsDebuff() return true end
+function modifier_card_nether_ward_debuff:IsHidden() return false end
+function modifier_card_nether_ward_debuff:IsPurgable() return false end
+function modifier_card_nether_ward_debuff:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_nether_ward_debuff:GetTexture()
+	return "custom/card_nether_ward"
+end
+
+function modifier_card_nether_ward_debuff:DeclareFunctions()
+	local funcs = {
+		MODIFIER_EVENT_ON_SPENT_MANA
+	}
+	return funcs
+end
+
+function modifier_card_nether_ward_debuff:OnSpentMana(keys)
+	if IsServer() then
+
+		-- If any parameter is missing, or the spell doesn't cost mana, do nothing
+		if not keys.unit or not keys.ability or not keys.cost or keys.cost <= 0 then
+			return nil
+		end
+
+		-- Zap the target if it is under the aura's effect
+		if keys.unit == self:GetParent() then
+			local building = self:GetCaster()
+
+			-- Play zap particle/sound
+			building:EmitSound("Artifart.NetherWardZap")
+			keys.unit:EmitSound("Artifart.NetherWardZapTarget")
+
+			if keys.cost < 200 then
+				local zap_pfx = ParticleManager:CreateParticle("particles/econ/items/pugna/pugna_ward_ti5/pugna_ward_attack_light_ti_5.vpcf", PATTACH_ABSORIGIN, keys.unit)
+				ParticleManager:SetParticleControlEnt(zap_pfx, 0, building, PATTACH_POINT_FOLLOW, "attach_hitloc", building:GetAbsOrigin(), true)
+				ParticleManager:SetParticleControlEnt(zap_pfx, 1, keys.unit, PATTACH_POINT_FOLLOW, "attach_hitloc", keys.unit:GetAbsOrigin(), true)
+				ParticleManager:ReleaseParticleIndex(zap_pfx)
+			elseif keys.cost < 400 then
+				local zap_pfx = ParticleManager:CreateParticle("particles/econ/items/pugna/pugna_ward_ti5/pugna_ward_attack_medium_ti_5.vpcf", PATTACH_ABSORIGIN, keys.unit)
+				ParticleManager:SetParticleControlEnt(zap_pfx, 0, building, PATTACH_POINT_FOLLOW, "attach_hitloc", building:GetAbsOrigin(), true)
+				ParticleManager:SetParticleControlEnt(zap_pfx, 1, keys.unit, PATTACH_POINT_FOLLOW, "attach_hitloc", keys.unit:GetAbsOrigin(), true)
+				ParticleManager:ReleaseParticleIndex(zap_pfx)
+			else
+				local zap_pfx = ParticleManager:CreateParticle("particles/econ/items/pugna/pugna_ward_ti5/pugna_ward_attack_heavy_ti_5.vpcf", PATTACH_ABSORIGIN, keys.unit)
+				ParticleManager:SetParticleControlEnt(zap_pfx, 0, building, PATTACH_POINT_FOLLOW, "attach_hitloc", building:GetAbsOrigin(), true)
+				ParticleManager:SetParticleControlEnt(zap_pfx, 1, keys.unit, PATTACH_POINT_FOLLOW, "attach_hitloc", keys.unit:GetAbsOrigin(), true)
+				ParticleManager:ReleaseParticleIndex(zap_pfx)
+			end
+
+			-- ZAP!
+			ApplyDamage({attacker = building, victim = keys.unit, damage = keys.cost * 2, damage_type = DAMAGE_TYPE_MAGICAL})
+		end
+	end
+end
+
+
+
+card_tidehunter = class({})
+
+function card_tidehunter:IsStealable() return false end
+function card_tidehunter:IsHiddenAbilityCastable() return true end
+
+function card_tidehunter:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local center = caster:GetAbsOrigin()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		caster:EmitSound("Artifart.UseCard")
+		caster:EmitSound("Artifart.RavageCast")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_tidehunter.vpcf", PATTACH_ABSORIGIN_FOLLOW, caster)
+		ParticleManager:SetParticleControl(cast_pfx, 0, center)
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Ravage particle
+		local ravage_pfx = ParticleManager:CreateParticle("particles/cards/ravage.vpcf", PATTACH_CUSTOMORIGIN, nil)
+		ParticleManager:SetParticleControl(ravage_pfx, 0, center)
+		ParticleManager:SetParticleControl(ravage_pfx, 1, Vector(300, 0, 0))
+		ParticleManager:SetParticleControl(ravage_pfx, 2, Vector(500, 0, 0))
+		ParticleManager:SetParticleControl(ravage_pfx, 3, Vector(700, 0, 0))
+		ParticleManager:SetParticleControl(ravage_pfx, 4, Vector(900, 0, 0))
+		ParticleManager:SetParticleControl(ravage_pfx, 5, Vector(1100, 0, 0))
+		ParticleManager:ReleaseParticleIndex(ravage_pfx)
+
+		-- Stun and damage enemies
+		local enemies = FindUnitsInRadius(caster:GetTeamNumber(), center, nil, 1200, DOTA_UNIT_TARGET_TEAM_ENEMY, DOTA_UNIT_TARGET_HERO + DOTA_UNIT_TARGET_BASIC, DOTA_UNIT_TARGET_FLAG_NONE, FIND_ANY_ORDER, false)
+		for _, enemy in pairs(enemies) do
+			enemy:AddNewModifier(caster, nil, "modifier_stunned", {duration = 3.0})
+			enemy:EmitSound("Artifart.RavageHit")
+			ApplyDamage({victim = enemy, attacker = caster, damage = 400, damage_type = DAMAGE_TYPE_MAGICAL})
+			local knockback_table = {
+				center_x = center.x,
+				center_y = center.y,
+				center_z = center.z,
+				knockback_duration = 0.6,
+				knockback_distance = 10,
+				knockback_height = 500,
+				should_stun = 1,
+				duration = 0.6
+			}
+			enemy:RemoveModifierByName("modifier_knockback")
+			enemy:AddNewModifier(caster, nil, "modifier_knockback", knockback_table)
+		end
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "tidehunter")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+
+
+card_pay_day = class({})
+
+function card_pay_day:IsStealable() return false end
+function card_pay_day:IsHiddenAbilityCastable() return true end
+
+function card_pay_day:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		caster:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_pay_day.vpcf", PATTACH_ABSORIGIN_FOLLOW, caster)
+		ParticleManager:SetParticleControl(cast_pfx, 0, caster:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Double your gold
+		local gold = PlayerResource:GetGold(player_id)
+		PlayerResource:ModifyGold(player_id, gold, false, DOTA_ModifyGold_CreepKill)
+		SendOverheadEventMessage(nil, OVERHEAD_ALERT_GOLD , caster, gold, nil)
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "pay_day")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+
+
+card_restoration_effort = class({})
+
+function card_restoration_effort:IsStealable() return false end
+function card_restoration_effort:IsHiddenAbilityCastable() return true end
+
+function card_restoration_effort:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_restoration_effort.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		local heal_pfx = ParticleManager:CreateParticle("particles/units/heroes/hero_chen/chen_hand_of_god.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(heal_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(heal_pfx)
+
+		-- Heal the target
+		target:Heal(target:GetMaxHealth(), caster)
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "restoration_effort")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+
+
+card_bolt_of_damocles = class({})
+
+function card_bolt_of_damocles:IsStealable() return false end
+function card_bolt_of_damocles:IsHiddenAbilityCastable() return true end
+
+function card_bolt_of_damocles:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_bolt_of_damocles.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Damage the target
+		Timers:CreateTimer(2, function()
+			local health = target:GetHealth()
+			local max_health = target:GetMaxHealth()
+			if health > (0.3 * max_health) then
+				target:EmitSound("Artifart.BoltOfDamocles")
+				local bolt_pfx = ParticleManager:CreateParticle("particles/cards/bolt_of_damocles_strike.vpcf", PATTACH_OVERHEAD_FOLLOW, target)
+				ParticleManager:SetParticleControl(bolt_pfx, 0, target:GetAbsOrigin())
+				ParticleManager:SetParticleControl(bolt_pfx, 2, target:GetAbsOrigin())
+				target:SetHealth(0.3 * max_health)
+				Timers:CreateTimer(1, function()
+					ParticleManager:DestroyParticle(bolt_pfx, false)
+					ParticleManager:ReleaseParticleIndex(bolt_pfx)
+				end)
+			end
+		end)
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "bolt_of_damocles")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+
+
+card_assured_destruction = class({})
+
+function card_assured_destruction:IsStealable() return false end
+function card_assured_destruction:IsHiddenAbilityCastable() return true end
+
+function card_assured_destruction:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local player_id = caster:GetPlayerID()
+
+		-- Find targets
+		local units = FindUnitsInRadius(caster:GetTeamNumber(), Vector(0, 0, 0), nil, 25000, DOTA_UNIT_TARGET_TEAM_BOTH, DOTA_UNIT_TARGET_HERO, DOTA_UNIT_TARGET_FLAG_INVULNERABLE + DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES + DOTA_UNIT_TARGET_FLAG_OUT_OF_WORLD, FIND_ANY_ORDER, false)
+		for _, unit in pairs(units) do
+			local modifier = unit:FindModifierByName("modifier_card_assured_destruction")
+			if modifier then
+				modifier:IncrementStackCount()
+			else
+				unit:AddNewModifier(caster, nil, "modifier_card_assured_destruction", {}):SetStackCount(1)
+			end
+
+			unit:EmitSound("Artifart.UseCard")
+
+			local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_assured_destruction.vpcf", PATTACH_ABSORIGIN_FOLLOW, unit)
+			ParticleManager:SetParticleControl(cast_pfx, 0, unit:GetAbsOrigin())
+			ParticleManager:ReleaseParticleIndex(cast_pfx)
+		end
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "assured_destruction")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_assured_destruction", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_assured_destruction = class({})
+
+function modifier_card_assured_destruction:IsHidden() return false end
+function modifier_card_assured_destruction:IsDebuff() return false end
+function modifier_card_assured_destruction:IsPurgable() return false end
+function modifier_card_assured_destruction:GetAttributes() return MODIFIER_ATTRIBUTE_PERMANENT + MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_assured_destruction:GetTexture()
+	return "custom/card_assured_destruction"
+end
+
+function modifier_card_assured_destruction:DeclareFunctions()
+	local funcs = {
+		MODIFIER_PROPERTY_TOTALDAMAGEOUTGOING_PERCENTAGE
+	}
+	return funcs
+end
+
+function modifier_card_assured_destruction:GetModifierTotalDamageOutgoing_Percentage()
+	return 20 * self:GetStackCount()
+end
+
+
+
+card_arm_the_rebellion = class({})
+
+function card_arm_the_rebellion:IsStealable() return false end
+function card_arm_the_rebellion:IsHiddenAbilityCastable() return true end
+
+function card_arm_the_rebellion:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_arm_the_rebellion.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Apply modifier
+		target:AddNewModifier(target, self, "modifier_card_arm_the_rebellion", {})
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "arm_the_rebellion")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_arm_the_rebellion", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_arm_the_rebellion = class({})
+
+function modifier_card_arm_the_rebellion:IsDebuff() return false end
+function modifier_card_arm_the_rebellion:IsHidden() return false end
+function modifier_card_arm_the_rebellion:IsPurgable() return false end
+function modifier_card_arm_the_rebellion:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_arm_the_rebellion:IsAura()
+	return true
+end
+
+function modifier_card_arm_the_rebellion:GetAuraRadius() return 25000 end
+function modifier_card_arm_the_rebellion:GetAuraSearchFlags() return DOTA_UNIT_TARGET_FLAG_OUT_OF_WORLD + DOTA_UNIT_TARGET_FLAG_INVULNERABLE end
+function modifier_card_arm_the_rebellion:GetAuraSearchTeam() return DOTA_UNIT_TARGET_TEAM_FRIENDLY end
+function modifier_card_arm_the_rebellion:GetAuraSearchType() return DOTA_UNIT_TARGET_BASIC end
+function modifier_card_arm_the_rebellion:GetModifierAura() return "modifier_card_arm_the_rebellion_buff" end
+
+function modifier_card_arm_the_rebellion:GetTexture()
+	return "custom/card_arm_the_rebellion"
+end
+
+function modifier_card_arm_the_rebellion:GetEffectName()
+	return "particles/cards/arm_the_rebellion_aura.vpcf"
+end
+
+function modifier_card_arm_the_rebellion:GetEffectAttachType()
+	return PATTACH_ABSORIGIN_FOLLOW
+end
+
+function modifier_card_arm_the_rebellion:DeclareFunctions()
+	local funcs = {
+		MODIFIER_EVENT_ON_DEATH
+	}
+	return funcs
+end
+
+function modifier_card_arm_the_rebellion:OnDeath(keys)
+	if IsServer() then
+		if keys.unit == self:GetParent() then
+			self:Destroy()
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_arm_the_rebellion_buff", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_arm_the_rebellion_buff = class({})
+
+function modifier_card_arm_the_rebellion_buff:IsHidden() return false end
+function modifier_card_arm_the_rebellion_buff:IsDebuff() return false end
+function modifier_card_arm_the_rebellion_buff:IsPurgable() return false end
+function modifier_card_arm_the_rebellion_buff:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_arm_the_rebellion_buff:GetTexture()
+	return "custom/card_arm_the_rebellion"
+end
+
+function modifier_card_arm_the_rebellion_buff:GetEffectName()
+	return "particles/cards/arm_the_rebellion_aura_buff.vpcf"
+end
+
+function modifier_card_arm_the_rebellion_buff:GetEffectAttachType()
+	return PATTACH_ABSORIGIN_FOLLOW
+end
+
+function modifier_card_arm_the_rebellion_buff:DeclareFunctions()
+	local funcs = {
+		MODIFIER_PROPERTY_DAMAGEOUTGOING_PERCENTAGE,
+		MODIFIER_PROPERTY_PHYSICAL_ARMOR_BONUS
+	}
+	return funcs
+end
+
+function modifier_card_arm_the_rebellion_buff:GetModifierDamageOutgoing_Percentage()
+	return 50
+end
+
+function modifier_card_arm_the_rebellion_buff:GetModifierPhysicalArmorBonus()
+	return 5
+end
+
+
+
+card_track = class({})
+
+function card_track:IsStealable() return false end
+function card_track:IsHiddenAbilityCastable() return true end
+
+function card_track:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local player_id = caster:GetPlayerID()
+
+		-- Find targets
+		local enemies = FindUnitsInRadius(caster:GetTeamNumber(), Vector(0, 0, 0), nil, 25000, DOTA_UNIT_TARGET_TEAM_ENEMY, DOTA_UNIT_TARGET_HERO, DOTA_UNIT_TARGET_FLAG_INVULNERABLE + DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES, FIND_ANY_ORDER, false)
+		for _, enemy in pairs(enemies) do
+			enemy:AddNewModifier(caster, nil, "modifier_card_track", {duration = 15})
+
+			enemy:EmitSound("Artifart.UseCard")
+
+			local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_track.vpcf", PATTACH_ABSORIGIN_FOLLOW, enemy)
+			ParticleManager:SetParticleControl(cast_pfx, 0, enemy:GetAbsOrigin())
+			ParticleManager:ReleaseParticleIndex(cast_pfx)
+		end
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "track")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_track", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_track = class({})
+
+function modifier_card_track:IsHidden() return false end
+function modifier_card_track:IsDebuff() return true end
+function modifier_card_track:IsPurgable() return true end
+function modifier_card_track:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_track:GetTexture()
+	return "custom/card_track"
+end
+
+function modifier_card_track:GetEffectName()
+	return "particles/cards/track_debuff.vpcf"
+end
+
+function modifier_card_track:GetEffectAttachType()
+	return PATTACH_OVERHEAD_FOLLOW
+end
+
+function modifier_card_track:CheckState()
+	local states = {
+		[MODIFIER_STATE_PROVIDES_VISION] = true
+	}
+	return states
+end
+
+
+
+card_aghanim_sanctum = class({})
+
+function card_aghanim_sanctum:IsStealable() return false end
+function card_aghanim_sanctum:IsHiddenAbilityCastable() return true end
+
+function card_aghanim_sanctum:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_aghanim_sanctum.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Grant the item
+		local new_item = CreateItem("item_aghanim_sanctum", target, target)
+		target:AddItem(new_item)
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "aghanim_sanctum")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+
+
+card_blink_dagger = class({})
+
+function card_blink_dagger:IsStealable() return false end
+function card_blink_dagger:IsHiddenAbilityCastable() return true end
+
+function card_blink_dagger:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target_loc = self:GetCursorPosition()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		caster:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_blink_dagger.vpcf", PATTACH_ABSORIGIN_FOLLOW, caster)
+		ParticleManager:SetParticleControl(cast_pfx, 0, caster:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Blink particles
+		local start_pfx = ParticleManager:CreateParticle("particles/items_fx/blink_dagger_start.vpcf", PATTACH_CUSTOMORIGIN, nil)
+		ParticleManager:SetParticleControl(start_pfx, 0, caster:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(start_pfx)
+		local end_pfx = ParticleManager:CreateParticle("particles/items_fx/blink_dagger_end.vpcf", PATTACH_CUSTOMORIGIN, nil)
+		ParticleManager:SetParticleControl(end_pfx, 0, target_loc)
+		ParticleManager:ReleaseParticleIndex(end_pfx)
+
+		-- Move
+		FindClearSpaceForUnit(caster, target_loc, true)
+		ProjectileManager:ProjectileDodge(caster)
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "blink_dagger")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+
+
+card_shivas_guard = class({})
+
+function card_shivas_guard:IsStealable() return false end
+function card_shivas_guard:IsHiddenAbilityCastable() return true end
+
+function card_shivas_guard:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_shivas_guard.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Apply modifier
+		target:AddNewModifier(target, self, "modifier_card_shivas_guard", {})
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "shivas_guard")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_shivas_guard", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_shivas_guard = class({})
+
+function modifier_card_shivas_guard:IsDebuff() return false end
+function modifier_card_shivas_guard:IsHidden() return false end
+function modifier_card_shivas_guard:IsPurgable() return false end
+function modifier_card_shivas_guard:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_shivas_guard:IsAura()
+	return true
+end
+
+function modifier_card_shivas_guard:GetAuraRadius() return 1200 end
+function modifier_card_shivas_guard:GetAuraSearchFlags() return DOTA_UNIT_TARGET_FLAG_OUT_OF_WORLD + DOTA_UNIT_TARGET_FLAG_INVULNERABLE end
+function modifier_card_shivas_guard:GetAuraSearchTeam() return DOTA_UNIT_TARGET_TEAM_ENEMY end
+function modifier_card_shivas_guard:GetAuraSearchType() return DOTA_UNIT_TARGET_HERO + DOTA_UNIT_TARGET_BASIC end
+function modifier_card_shivas_guard:GetModifierAura() return "modifier_card_shivas_guard_debuff" end
+
+function modifier_card_shivas_guard:GetTexture()
+	return "custom/card_shivas_guard"
+end
+
+function modifier_card_shivas_guard:GetEffectName()
+	return "particles/cards/shiva_aura.vpcf"
+end
+
+function modifier_card_shivas_guard:GetEffectAttachType()
+	return PATTACH_ABSORIGIN_FOLLOW
+end
+
+function modifier_card_shivas_guard:DeclareFunctions()
+	local funcs = {
+		MODIFIER_EVENT_ON_DEATH
+	}
+	return funcs
+end
+
+function modifier_card_shivas_guard:OnDeath(keys)
+	if IsServer() then
+		if keys.unit == self:GetParent() then
+			self:Destroy()
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_shivas_guard_debuff", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_shivas_guard_debuff = class({})
+
+function modifier_card_shivas_guard_debuff:IsHidden() return false end
+function modifier_card_shivas_guard_debuff:IsDebuff() return true end
+function modifier_card_shivas_guard_debuff:IsPurgable() return false end
+function modifier_card_shivas_guard_debuff:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_shivas_guard_debuff:GetTexture()
+	return "custom/card_shivas_guard_debuff"
+end
+
+function modifier_card_shivas_guard_debuff:GetEffectName()
+	return "particles/cards/shiva_debuff.vpcf"
+end
+
+function modifier_card_shivas_guard_debuff:GetEffectAttachType()
+	return PATTACH_ABSORIGIN_FOLLOW
+end
+
+function modifier_card_shivas_guard_debuff:DeclareFunctions()
+	local funcs = {
+		MODIFIER_PROPERTY_MOVESPEED_BONUS_PERCENTAGE,
+		MODIFIER_PROPERTY_ATTACKSPEED_BONUS_CONSTANT
+	}
+	return funcs
+end
+
+function modifier_card_shivas_guard_debuff:GetModifierMoveSpeedBonus_Percentage()
+	return -30
+end
+
+function modifier_card_shivas_guard_debuff:GetModifierAttackSpeedBonus_Constant()
+	return -60
+end
+
+
+
+card_wingfall_hammer = class({})
+
+function card_wingfall_hammer:IsStealable() return false end
+function card_wingfall_hammer:IsHiddenAbilityCastable() return true end
+
+function card_wingfall_hammer:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_wingfall_hammer.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Apply modifier
+		target:AddNewModifier(target, self, "modifier_card_wingfall_hammer", {})
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "wingfall_hammer")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_wingfall_hammer", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_wingfall_hammer = class({})
+
+function modifier_card_wingfall_hammer:IsDebuff() return false end
+function modifier_card_wingfall_hammer:IsHidden() return false end
+function modifier_card_wingfall_hammer:IsPurgable() return false end
+function modifier_card_wingfall_hammer:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_wingfall_hammer:GetTexture()
+	return "custom/card_wingfall_hammer"
+end
+
+function modifier_card_wingfall_hammer:DeclareFunctions()
+	local funcs = {
+		MODIFIER_PROPERTY_DAMAGEOUTGOING_PERCENTAGE,
+		MODIFIER_EVENT_ON_ATTACK_LANDED
+	}
+	return funcs
+end
+
+function modifier_card_wingfall_hammer:GetModifierDamageOutgoing_Percentage()
+	if self:GetStackCount() >= 4 then
+		return 100
+	else
+		return 0
+	end
+end
+
+function modifier_card_wingfall_hammer:OnAttackLanded(keys)
+	if IsServer() then
+		if keys.attacker == self:GetParent() then
+			if (not keys.target:IsBuilding()) and (keys.attacker:GetTeam() ~= keys.target:GetTeam()) then
+				self:IncrementStackCount()
+				if self:GetStackCount() >= 5 then
+
+					-- Hit particle and sound
+					keys.target:EmitSound("Artifart.WingfallHammerHit")
+					local caster_loc = keys.attacker:GetAbsOrigin()
+					local hit_pfx = ParticleManager:CreateParticle("particles/econ/items/omniknight/hammer_ti6_immortal/omniknight_purification_immortal_cast.vpcf", PATTACH_ABSORIGIN_FOLLOW, keys.target)
+					ParticleManager:SetParticleControlEnt(hit_pfx, 0, keys.attacker, PATTACH_POINT_FOLLOW, "attach_hitloc", caster_loc, true)
+					ParticleManager:SetParticleControlEnt(hit_pfx, 1, keys.target, PATTACH_POINT_FOLLOW, "attach_hitloc", keys.target:GetAbsOrigin(), true)
+					ParticleManager:ReleaseParticleIndex(hit_pfx)
+
+					-- Heal all nearby allies
+					local allies = FindUnitsInRadius(keys.attacker:GetTeamNumber(), caster_loc, nil, 1200, DOTA_UNIT_TARGET_TEAM_FRIENDLY, DOTA_UNIT_TARGET_HERO, DOTA_UNIT_TARGET_FLAG_INVULNERABLE, FIND_ANY_ORDER, false)
+					local heal = keys.damage
+					if #allies > 1 then
+						heal = heal / #allies
+					end
+					for _,ally in pairs(allies) do
+						ally:Heal(heal, keys.attacker)
+						local heal_pfx = ParticleManager:CreateParticle("particles/cards/wingfall_hammer_hit.vpcf", PATTACH_ABSORIGIN_FOLLOW, ally)
+						ParticleManager:SetParticleControl(heal_pfx, 0, ally:GetAbsOrigin())
+						ParticleManager:ReleaseParticleIndex(heal_pfx)
+						SendOverheadEventMessage(nil, OVERHEAD_ALERT_HEAL, ally, heal, nil)
+					end
+
+					-- Reset stacks
+					self:SetStackCount(0)
+				end
+			end
+		end
+	end
+end
+
+
+
+card_jmuy_the_wise = class({})
+
+function card_jmuy_the_wise:IsStealable() return false end
+function card_jmuy_the_wise:IsHiddenAbilityCastable() return true end
+
+function card_jmuy_the_wise:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_jmuy_the_wise.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Apply modifier
+		target:AddNewModifier(target, self, "modifier_card_jmuy_the_wise", {})
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "jmuy_the_wise")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_jmuy_the_wise", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_jmuy_the_wise = class({})
+
+function modifier_card_jmuy_the_wise:IsDebuff() return false end
+function modifier_card_jmuy_the_wise:IsHidden() return true end
+function modifier_card_jmuy_the_wise:IsPurgable() return false end
+function modifier_card_jmuy_the_wise:GetAttributes() return MODIFIER_ATTRIBUTE_PERMANENT + MODIFIER_ATTRIBUTE_MULTIPLE + MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_jmuy_the_wise:GetTexture()
+	return "custom/card_jmuy_the_wise"
+end
+
+function modifier_card_jmuy_the_wise:DeclareFunctions()
+	local funcs = {
+		MODIFIER_EVENT_ON_TAKEDAMAGE
+	}
+	return funcs
+end
+
+function modifier_card_jmuy_the_wise:OnTakeDamage(keys)
+	if IsServer() then
+		if keys.attacker == self:GetParent() and keys.inflictor then
+			if keys.unit:IsBuilding() or keys.unit:IsIllusion() or (keys.unit:GetTeam() == keys.attacker:GetTeam()) or (bit.band(keys.damage_flags, DOTA_DAMAGE_FLAG_NO_SPELL_LIFESTEAL) == DOTA_DAMAGE_FLAG_NO_SPELL_LIFESTEAL) then
+				return end
+
+			-- Also do nothing if the inflictor is forbidden
+			local forbidden_inflictors = {
+				"item_blade_mail", 
+				"luna_moon_glaive"
+			}
+			for _, forbidden_inflictor in pairs(forbidden_inflictors) do
+				if keys.inflictor:GetName() == forbidden_inflictor then return end
+			end
+			
+			-- Particle effect
+			local lifesteal_pfx = ParticleManager:CreateParticle("particles/items3_fx/octarine_core_lifesteal.vpcf", PATTACH_ABSORIGIN_FOLLOW, keys.attacker)
+			ParticleManager:SetParticleControl(lifesteal_pfx, 0, keys.attacker:GetAbsOrigin())
+			ParticleManager:ReleaseParticleIndex(lifesteal_pfx)
+				
+			-- If the target is a real hero, heal for the full value
+			if keys.unit:IsRealHero() then
+				keys.attacker:Heal(keys.damage * 0.25, keys.attacker)
+
+			-- else, heal for less
+			else
+				keys.attacker:Heal(keys.damage * 0.10, keys.attacker)
+			end
+		end
+	end
+end
+
+
+
+card_darklord = class({})
+
+function card_darklord:IsStealable() return false end
+function card_darklord:IsHiddenAbilityCastable() return true end
+
+function card_darklord:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Roll!
+		if RollPercentage(50) then
+
+			-- Good effect
+			local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_darklord.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+			ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+			ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+			local heal_pfx = ParticleManager:CreateParticle("particles/cards/darklord_fix.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+			ParticleManager:SetParticleControl(heal_pfx, 0, target:GetAbsOrigin())
+			ParticleManager:ReleaseParticleIndex(heal_pfx)
+
+			target:Heal(target:GetMaxHealth(), caster)
+			target:GiveMana(target:GetMaxMana())
+			target:AddNewModifier(caster, self, "modifier_card_darklord", {})
+		else
+
+			-- Bad effect
+			local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_darklord_dmca.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+			ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+			ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+			local ban_pfx = ParticleManager:CreateParticle("particles/cards/darklord_dmca.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+			ParticleManager:SetParticleControl(ban_pfx, 0, target:GetAbsOrigin())
+			ParticleManager:ReleaseParticleIndex(ban_pfx)
+
+			target:AddNewModifier(caster, self, "modifier_stunned", {duration = 30})
+			target:AddNewModifier(caster, self, "modifier_card_darklord_dmca", {duration = 30})
+		end
+
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "darklord")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_darklord", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_darklord = class({})
+
+function modifier_card_darklord:IsDebuff() return false end
+function modifier_card_darklord:IsHidden() return true end
+function modifier_card_darklord:IsPurgable() return false end
+function modifier_card_darklord:GetAttributes() return MODIFIER_ATTRIBUTE_PERMANENT + MODIFIER_ATTRIBUTE_MULTIPLE + MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_darklord:GetTexture()
+	return "custom/card_darklord"
+end
+
+function modifier_card_darklord:DeclareFunctions()
+	local funcs = {
+		MODIFIER_PROPERTY_STATS_STRENGTH_BONUS,
+		MODIFIER_PROPERTY_STATS_AGILITY_BONUS,
+		MODIFIER_PROPERTY_STATS_INTELLECT_BONUS
+	}
+	return funcs
+end
+
+function modifier_card_darklord:GetModifierBonusStats_Strength()
+	return 20
+end
+
+function modifier_card_darklord:GetModifierBonusStats_Agility()
+	return 20
+end
+
+function modifier_card_darklord:GetModifierBonusStats_Intellect()
+	return 20
+end
+
+LinkLuaModifier("modifier_card_darklord_dmca", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_darklord_dmca = class({})
+
+function modifier_card_darklord_dmca:IsDebuff() return true end
+function modifier_card_darklord_dmca:IsHidden() return false end
+function modifier_card_darklord_dmca:IsPurgable() return false end
+function modifier_card_darklord_dmca:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_darklord_dmca:GetTexture()
+	return "custom/card_darklord"
+end
+
+function modifier_card_darklord_dmca:CheckState()
+	local states = {
+		[MODIFIER_STATE_STUNNED] = true,
+		[MODIFIER_STATE_INVULNERABLE] = true,
+		[MODIFIER_STATE_UNSELECTABLE] = true,
+		[MODIFIER_STATE_OUT_OF_GAME] = true,
+		[MODIFIER_STATE_NO_HEALTH_BAR] = true
+	}
+	return states
+end
+
+
+
+card_in_for_the_long_haul = class({})
+
+function card_in_for_the_long_haul:IsStealable() return false end
+function card_in_for_the_long_haul:IsHiddenAbilityCastable() return true end
+
+function card_in_for_the_long_haul:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		caster:EmitSound("Artifart.UseCard")
+
+		-- Cast effect
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_in_for_the_long_haul.vpcf", PATTACH_ABSORIGIN_FOLLOW, caster)
+		ParticleManager:SetParticleControl(cast_pfx, 0, caster:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "in_for_the_long_haul")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+
+
+card_blessing_of_the_lord = class({})
+
+function card_blessing_of_the_lord:IsStealable() return false end
+function card_blessing_of_the_lord:IsHiddenAbilityCastable() return true end
+
+function card_blessing_of_the_lord:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local player_id = caster:GetPlayerID()
+
+		-- Find targets
+		local heroes = FindUnitsInRadius(caster:GetTeamNumber(), Vector(0, 0, 0), nil, 25000, DOTA_UNIT_TARGET_TEAM_BOTH, DOTA_UNIT_TARGET_HERO, DOTA_UNIT_TARGET_FLAG_INVULNERABLE + DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES, FIND_ANY_ORDER, false)
+		for i, hero in pairs(heroes) do
+			hero:AddNewModifier(caster, nil, "modifier_card_blessing_of_the_lord", {duration = 12})
+
+			hero:EmitSound("Artifart.UseCard")
+
+			local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_blessing_of_the_lord.vpcf", PATTACH_ABSORIGIN_FOLLOW, hero)
+			ParticleManager:SetParticleControl(cast_pfx, 0, hero:GetAbsOrigin())
+			ParticleManager:ReleaseParticleIndex(cast_pfx)
+		end
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "blessing_of_the_lord")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+
+
+LinkLuaModifier("modifier_card_blessing_of_the_lord", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_blessing_of_the_lord = class({})
+
+function modifier_card_blessing_of_the_lord:IsDebuff() return false end
+function modifier_card_blessing_of_the_lord:IsHidden() return false end
+function modifier_card_blessing_of_the_lord:IsPurgable() return false end
+function modifier_card_blessing_of_the_lord:GetAttributes() return MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_blessing_of_the_lord:GetTexture()
+	return "custom/card_blessing_of_the_lord"
+end
+
+function modifier_card_blessing_of_the_lord:OnCreated(keys)
+	if IsServer() then
+		self:StartIntervalThink(0.1)
+	end
+end
+
+function modifier_card_blessing_of_the_lord:OnIntervalThink()
+	if IsServer() then
+		local gold = RandomInt(1, 10)
+		local player_id = self:GetParent():GetPlayerID()
+		PlayerResource:ModifyGold(player_id, gold, false, DOTA_ModifyGold_CreepKill)
+		SendOverheadEventMessage(nil, OVERHEAD_ALERT_GOLD , self:GetParent(), gold, nil)
+	end
 end

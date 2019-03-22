@@ -4,7 +4,6 @@
 
 function InitializeUI() {
 	CustomNetTables.SubscribeNetTableListener("player_cards", OnPlayerCardsChanged);
-	
 }
 
 function OnPlayerCardsChanged(table, key, data) {
@@ -22,6 +21,11 @@ function RefreshPlayerCards(data) {
 		var panel = $("#CardPanel1");
 		panel.SetPanelEvent("onmouseover", function () {
 			$.DispatchEvent("DOTAShowAbilityTooltip", panel, "card_" + data[1]);
+			$("#DiscardButton1").style.visibility = 'visible';
+		})
+		panel.SetPanelEvent("onmouseout", function () {
+			$.DispatchEvent("DOTAHideAbilityTooltip", panel);
+			$("#DiscardButton1").style.visibility = 'collapse';
 		})
 		panel.style.visibility = 'visible';
 		$("#CardButton1").SetImage("file://{images}cards/" + data[1] + ".png");
@@ -33,6 +37,11 @@ function RefreshPlayerCards(data) {
 		var panel = $("#CardPanel2");
 		panel.SetPanelEvent("onmouseover", function () {
 			$.DispatchEvent("DOTAShowAbilityTooltip", panel, "card_" + data[2]);
+			$("#DiscardButton2").style.visibility = 'visible';
+		})
+		panel.SetPanelEvent("onmouseout", function () {
+			$.DispatchEvent("DOTAHideAbilityTooltip", panel);
+			$("#DiscardButton2").style.visibility = 'collapse';
 		})
 		panel.style.visibility = 'visible';
 		$("#CardButton2").SetImage("file://{images}cards/" + data[2] + ".png");
@@ -44,6 +53,11 @@ function RefreshPlayerCards(data) {
 		var panel = $("#CardPanel3");
 		panel.SetPanelEvent("onmouseover", function () {
 			$.DispatchEvent("DOTAShowAbilityTooltip", panel, "card_" + data[3]);
+			$("#DiscardButton3").style.visibility = 'visible';
+		})
+		panel.SetPanelEvent("onmouseout", function () {
+			$.DispatchEvent("DOTAHideAbilityTooltip", panel);
+			$("#DiscardButton3").style.visibility = 'collapse';
 		})
 		panel.style.visibility = 'visible';
 		$("#CardButton3").SetImage("file://{images}cards/" + data[3] + ".png");
@@ -55,6 +69,11 @@ function RefreshPlayerCards(data) {
 		var panel = $("#CardPanel4");
 		panel.SetPanelEvent("onmouseover", function () {
 			$.DispatchEvent("DOTAShowAbilityTooltip", panel, "card_" + data[4]);
+			$("#DiscardButton4").style.visibility = 'visible';
+		})
+		panel.SetPanelEvent("onmouseout", function () {
+			$.DispatchEvent("DOTAHideAbilityTooltip", panel);
+			$("#DiscardButton4").style.visibility = 'collapse';
 		})
 		panel.style.visibility = 'visible';
 		$("#CardButton4").SetImage("file://{images}cards/" + data[4] + ".png");
@@ -66,6 +85,11 @@ function RefreshPlayerCards(data) {
 		var panel = $("#CardPanel5");
 		panel.SetPanelEvent("onmouseover", function () {
 			$.DispatchEvent("DOTAShowAbilityTooltip", panel, "card_" + data[5]);
+			$("#DiscardButton5").style.visibility = 'visible';
+		})
+		panel.SetPanelEvent("onmouseout", function () {
+			$.DispatchEvent("DOTAHideAbilityTooltip", panel);
+			$("#DiscardButton5").style.visibility = 'collapse';
 		})
 		panel.style.visibility = 'visible';
 		$("#CardButton5").SetImage("file://{images}cards/" + data[5] + ".png");
@@ -77,7 +101,11 @@ function UseCard(slot) {
 	if ( player_cards[slot] !== "blank" ) {
 		var hero_index = Players.GetPlayerHeroEntityIndex(Game.GetLocalPlayerID())
 		var ability_index = Entities.GetAbilityByName(hero_index, "card_" + player_cards[slot])
-		Abilities.ExecuteAbility(ability_index, hero_index, false)
+		if (GameUI.IsAltDown() == true) {
+			Abilities.PingAbility(ability_index)
+		} else {
+			Abilities.ExecuteAbility(ability_index, hero_index, false)
+		}
 	}
 }
 

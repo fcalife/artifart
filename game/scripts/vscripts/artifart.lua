@@ -7,6 +7,7 @@ end
 -- Initialize card list and inventory for each player
 function Artifart:Initialize()
 	Artifart.card_list = LoadKeyValues("scripts/npc/KV/cardlist.kv")
+	Artifart.meme_card_list = LoadKeyValues("scripts/npc/KV/meme_cardlist.kv")
 	Artifart.secret_shop_items = LoadKeyValues("scripts/npc/KV/secret_shop_items.kv")
 	Artifart.valid_players = {}
 	for player_id = 0, DOTA_MAX_TEAM_PLAYERS  do
@@ -78,7 +79,11 @@ function Artifart:AddCard(player_id, card_name)
 end
 
 function Artifart:AddRandomCard(player_id)
-	self:AddCard(player_id, self.card_list[tostring(RandomInt(1, CARD_COUNT))])
+	local card_name = self.card_list[tostring(RandomInt(1, CARD_COUNT))]
+	if RandomInt(1, 200) <= 1 then
+		card_name = self.meme_card_list[tostring(RandomInt(1, 3))]
+	end
+	self:AddCard(player_id, card_name)
 end
 
 function Artifart:ConsumeCard(player_id, card_slot)
