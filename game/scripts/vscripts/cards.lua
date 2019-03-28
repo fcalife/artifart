@@ -3053,7 +3053,7 @@ function modifier_card_treant_protector:DeclareFunctions()
 end
 
 function modifier_card_treant_protector:GetModifierConstantHealthRegen()
-	return 2
+	return 3
 end
 
 card_enchantress = class({})
