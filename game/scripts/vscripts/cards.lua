@@ -3000,7 +3000,61 @@ function modifier_card_keenfolk_musket:GetModifierAttackRangeBonus()
 	return 100
 end
 
+card_enchantress = class({})
 
+function card_enchantress:IsStealable() return false end
+function card_enchantress:IsHiddenAbilityCastable() return true end
+
+function card_enchantress:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_enchantress.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Apply modifier
+		target:AddNewModifier(caster, self, "modifier_card_enchantress", {})
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "enchantress")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_enchantress", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_enchantress = class({})
+
+function modifier_card_enchantress:IsDebuff() return false end
+function modifier_card_enchantress:IsHidden() return false end
+function modifier_card_enchantress:IsPurgable() return false end
+function modifier_card_enchantress:GetAttributes() return MODIFIER_ATTRIBUTE_MULTIPLE + MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_enchantress:GetTexture()
+	return "custom/card_enchantress"
+end
+
+function modifier_card_enchantress:DeclareFunctions()
+	local funcs = {
+		MODIFIER_PROPERTY_HEALTH_REGEN_CONSTANT
+	}
+	return funcs
+end
+
+function modifier_card_enchantress:GetModifierConstantHealthRegen()
+	return 6
+end
 
 card_sniper = class({})
 
