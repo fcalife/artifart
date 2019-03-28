@@ -2713,6 +2713,62 @@ function modifier_card_juke:GetModifierMoveSpeedBonus_Constant()
 	return 5
 end
 
+card_crystal_maiden = class({})
+
+function card_crystal_maiden:IsStealable() return false end
+function card_crystal_maiden:IsHiddenAbilityCastable() return true end
+
+function card_crystal_maiden:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_crystal_maiden.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Apply modifier
+		target:AddNewModifier(caster, self, "modifier_card_crystal_maiden", {})
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "crystal_maiden")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_crystal_maiden", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_crystal_maiden = class({})
+
+function modifier_card_crystal_maiden:IsDebuff() return false end
+function modifier_card_crystal_maiden:IsHidden() return true end
+function modifier_card_crystal_maiden:IsPurgable() return false end
+function modifier_card_crystal_maiden:GetAttributes() return MODIFIER_ATTRIBUTE_PERMANENT + MODIFIER_ATTRIBUTE_MULTIPLE + MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_crystal_maiden:GetTexture()
+	return "custom/card_crystal_maiden"
+end
+
+function modifier_card_crystal_maiden:DeclareFunctions()
+	local funcs = {
+		MODIFIER_PROPERTY_MANA_REGEN_CONSTANT  
+	}
+	return funcs
+end
+
+function modifier_card_crystal_maiden:GetModifierConstantManaRegen()
+	return 1
+end
+
 
 card_claymore = class({})
 

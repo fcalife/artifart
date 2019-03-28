@@ -27,7 +27,7 @@
 			</Panel>
 			<Panel class="CardPanel" id="CardPanel5" onmouseout="DOTAHideAbilityTooltip()">
 				<Image class="CardButton" id="CardButton5" scaling="stretch-to-fit-y-preserve-aspect" onactivate="UseCard('5')" />
-				<Image class="DiscardButton" id="DiscardButton5" src="file://{images}control_icons/x_close.png" onactivate="DiscardCard('5')" />
+				<Image class="DiscardButton" id="DiscardButton5" src="file://{images}cards/crystal_maiden.png" onactivate="DiscardCard('5')" />
 			</Panel>
 		</Panel>
 	</Panel>
