@@ -14,7 +14,7 @@ require('internal/util')
 
 _G.GAME_SPEED_MULTIPLIER = 1
 _G.MAX_CARDS = 5
-_G.CARD_COUNT = 71
+_G.CARD_COUNT = 75
 
 function Precache(context)
 

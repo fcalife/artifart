@@ -3000,6 +3000,62 @@ function modifier_card_keenfolk_musket:GetModifierAttackRangeBonus()
 	return 100
 end
 
+card_treant_protector = class({})
+
+function card_treant_protector:IsStealable() return false end
+function card_treant_protector:IsHiddenAbilityCastable() return true end
+
+function card_treant_protector:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_treant_protector.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Apply modifier
+		target:AddNewModifier(caster, self, "modifier_card_treant_protector", {})
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "treant_protector")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_treant_protector", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_treant_protector = class({})
+
+function modifier_card_treant_protector:IsDebuff() return false end
+function modifier_card_treant_protector:IsHidden() return true end
+function modifier_card_treant_protector:IsPurgable() return false end
+function modifier_card_treant_protector:GetAttributes() return MODIFIER_ATTRIBUTE_PERMANENT + MODIFIER_ATTRIBUTE_MULTIPLE + MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_treant_protector:GetTexture()
+	return "custom/card_treant_protector"
+end
+
+function modifier_card_treant_protector:DeclareFunctions()
+	local funcs = {
+		MODIFIER_PROPERTY_HEALTH_REGEN_CONSTANT  
+	}
+	return funcs
+end
+
+function modifier_card_treant_protector:GetModifierConstantHealthRegen()
+	return 2
+end
+
 card_enchantress = class({})
 
 function card_enchantress:IsStealable() return false end
@@ -3053,7 +3109,7 @@ function modifier_card_enchantress:DeclareFunctions()
 end
 
 function modifier_card_enchantress:GetModifierConstantHealthRegen()
-	return 6
+	return 10
 end
 
 card_sniper = class({})
