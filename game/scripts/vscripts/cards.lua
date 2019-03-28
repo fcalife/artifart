@@ -2657,6 +2657,62 @@ function modifier_card_broadsword:GetModifierPreAttack_BonusDamage()
 end
 
 
+card_juke = class({})
+
+function card_juke:IsStealable() return false end
+function card_juke:IsHiddenAbilityCastable() return true end
+
+function card_juke:OnSpellStart()
+	if IsServer() then
+
+		-- Parameters
+		local caster = self:GetCaster()
+		local target = self:GetCursorTarget()
+		local player_id = caster:GetPlayerID()
+
+		-- Cast sound
+		target:EmitSound("Artifart.UseCard")
+
+		-- Cast particle
+		local cast_pfx = ParticleManager:CreateParticle("particles/cards/card_use_juke.vpcf", PATTACH_ABSORIGIN_FOLLOW, target)
+		ParticleManager:SetParticleControl(cast_pfx, 0, target:GetAbsOrigin())
+		ParticleManager:ReleaseParticleIndex(cast_pfx)
+
+		-- Apply modifier
+		target:AddNewModifier(caster, self, "modifier_card_juke", {})
+
+		-- Consume card
+		local card_slot = Artifart:HasCard(player_id, "juke")
+		if card_slot then
+			Artifart:ConsumeCard(player_id, card_slot)
+		end
+	end
+end
+
+LinkLuaModifier("modifier_card_juke", "cards", LUA_MODIFIER_MOTION_NONE)
+
+modifier_card_juke = class({})
+
+function modifier_card_juke:IsDebuff() return false end
+function modifier_card_juke:IsHidden() return true end
+function modifier_card_juke:IsPurgable() return false end
+function modifier_card_juke:GetAttributes() return MODIFIER_ATTRIBUTE_PERMANENT + MODIFIER_ATTRIBUTE_MULTIPLE + MODIFIER_ATTRIBUTE_IGNORE_INVULNERABLE end
+
+function modifier_card_juke:GetTexture()
+	return "custom/card_juke"
+end
+
+function modifier_card_juke:DeclareFunctions()
+	local funcs = {
+		MODIFIER_PROPERTY_MOVESPEED_BONUS_CONSTANT
+	}
+	return funcs
+end
+
+function modifier_card_juke:GetModifierMoveSpeedBonus_Constant()
+	return 5
+end
+
 
 card_claymore = class({})
 
