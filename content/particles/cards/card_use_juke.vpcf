@@ -15,7 +15,7 @@
 			m_ChildRef = resource:"particles/cards/card_use_embers_green.vpcf"
 		},
 		{
-			m_ChildRef = resource:"particles/cards/card_use_crest_apotheosis_blade.vpcf"
+			m_ChildRef = resource:"particles/cards/card_use_crest_juke.vpcf"
 		},
 		{
 			m_ChildRef = resource:"particles/cards/card_use_flash_green.vpcf"
