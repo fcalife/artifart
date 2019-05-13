@@ -81,7 +81,7 @@ end
 function Artifart:AddRandomCard(player_id)
 	local card_name = self.card_list[tostring(RandomInt(1, CARD_COUNT))]
 	if RandomInt(1, 200) <= 1 then
-		card_name = self.meme_card_list[tostring(RandomInt(1, 3))]
+		card_name = self.meme_card_list[tostring(RandomInt(1, 4))]
 	end
 	self:AddCard(player_id, card_name)
 end

@@ -16,6 +16,7 @@
 		"item"		"item_courier"
 		"item"		"item_bottle"
 		"item"		"item_booster_pack"
+		"item"		"item_endless_deck"
 	}
 
 	"attributes"
