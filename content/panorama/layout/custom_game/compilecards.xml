@@ -1,0 +1,9 @@
+<root>
+	<Image src="file://{images}cards/messenger_rookery.png" />
+	<Image id="ass2" src="file://{images}cards/dark_seer.png" />
+	<Image id="ass3" src="file://{images}cards/clear_the_deck.png" />
+	<Image id="ass4" src="file://{images}cards/defensive_bloom.png" />
+	<Image id="ass5" src="file://{images}cards/venomancer.png" />
+	<Image id="ass6" src="file://{images}cards/magnus.png" />
+	<Image id="ass7" src="file://{images}cards/black_lotus.png" />
+</root>

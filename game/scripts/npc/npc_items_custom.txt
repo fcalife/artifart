@@ -143,4 +143,20 @@
 			}
 		}
 	}
+	"item_endless_deck"
+	{
+		"ID"							"7006"
+		"BaseClass"						"item_lua"
+		"ScriptFile"					"cards.lua"
+		"AbilityTextureName" 			"custom/item_endless_deck"
+
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL"
+		"ItemCost"						"0"
+		"ShouldBeSuggested"				"0"
+		"ItemPurchasable"				"1"
+		"ItemSellable"					"1"
+		"ItemKillable"					"0"
+		"ItemDroppable"					"1"
+		"ItemCost"						"6000"
+	}
 }
